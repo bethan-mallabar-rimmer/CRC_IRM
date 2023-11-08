@@ -8,22 +8,29 @@ library(stringr)
 
 find_temp_codes <- function(codes, file1='read2_lkp.csv', file2='read3_lkp.csv') {
   codes_header <- c('code','term_description_r2','term_description_r3')
+
+  #Check codes are in character format
+  #-----------------------------------
+  stopifnot("Error: please input in character format either a single Read code or vector of Read codes." = is.character(codes))
   
   #If no codes input by user, return empty dataframe
   #-------------------------------------------------
   if (is.na(codes[1]) == TRUE){
     warning('User did not supply any read2 or read3 codes to search for. Returning empty dataframe.')
-    warning('Please input a code/a list of codes, each code up to 5 characters in length.
-            Codes can contain letters, numbers or full stops and are case sensitive.')
+    warning('Please input a code or a vector of codes. Codes can contain letters, numbers or full 
+            stops and are case sensitive. Codes longer than 5 characters will be cropped to 5 characters.')
     return(read.table(text = "",col.names = codes_header))
   }
   
-  #If user input codes, crop codes down to 5 figures each - the Biobank format
-  #---------------------------------------------------------------------------
+  #If user input codes, crop codes down to 5 characters each - the Biobank format
+  #-------------------------------------------------------------------------------
+  message('Cropping all Read codes to 5 characters in length to match the UK Biobank format.
+          (If each of your codes already contained 5 characters or less, you can ignore this message).')
   for (i in 1:length(codes)) {codes[i] <- substr(codes[i], 1, 5)}
 
   #Use grep to look for codes in read2/3 lookup tables
   #----------------------------------------------------
+  message('Searching the lookup tables for codes input by the user...')
   codesg=paste(codes,collapse='\\|^') #turn, e.g. 'code1, code2' into 'code1\\|^code2' for use in a grep
   
   grepcode2=paste('grep \'','^',codesg,'\' ', file1, '> read2.csv',sep='') #output = "grep '^B13\\|^B14' read2_lkp.csv> read2.csv"
@@ -36,7 +43,7 @@ find_temp_codes <- function(codes, file1='read2_lkp.csv', file2='read3_lkp.csv')
   #---------------------------------------------------
   if (as.numeric(file.info('read2.csv')[1])==0 && as.numeric(file.info('read3.csv')[1])==0){
     warning(paste('Read 2/3 codes beginning with',paste(codes[1:3], collapse = ", "),'etc. could not be found. Returning empty dataframe.'))
-    warning('Please ensure input codes are each <= 5 characters. Note that codes are case sensitive.')
+    warning('Note that input codes should only contain letters, numbers or full stops and are case sensitive.')
     return(read.table(text = "",col.names = codes_header))
   }
   
@@ -53,7 +60,7 @@ find_temp_codes <- function(codes, file1='read2_lkp.csv', file2='read3_lkp.csv')
     any_read3 <- FALSE
   }
   
-  #Import and tidy data from filtered READ 2 codes tables
+  #Import and tidy data from filtered read 2 codes tables
   #======================================================
   if (any_read2 == TRUE) {
     #Import read2 codes & term descriptions as dataframe:
@@ -91,7 +98,7 @@ find_temp_codes <- function(codes, file1='read2_lkp.csv', file2='read3_lkp.csv')
       slice(1)
   }
   
-  #Import and tidy data from filtered READ 3 codes tables
+  #Import and tidy data from filtered read 3 codes tables
   #======================================================
   if (any_read3 == TRUE) {
     #Import read3 codes & term descriptions as dataframe:
