@@ -1,5 +1,5 @@
 #either add read2 and 3 lookup tables to your working environment manually
-#or uncomment below lines and replace file/path to download to your environment:
+#or uncomment below lines and replace file/path to download to your environment on DNA Nexus:
 #system('dx download read2_lkp.csv') 
 #system('dx download read3_lkp.csv')
 
