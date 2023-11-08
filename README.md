@@ -23,3 +23,7 @@ The **find_read_codes** folder contains an R function which takes read codes as 
 **CRC_read_codes** contains the list of 59 read codes used to identify cases of CRC in participants' GP records.
 
 **tables_and_figures** contains code used to generate all tables and figures (including supplementary)
+
+
+
+Abbreviations: AIC, Akaike information criterion, CRC = colorectal cancer, GP = general practice, ROCAUC = receiver operating characteristic area under the curve
