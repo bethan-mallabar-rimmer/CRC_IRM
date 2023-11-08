@@ -1,6 +1,5 @@
-# find-read-codes
-Search UK Biobank clinical read 2/3 code lookup tables for codes beginning with a character or character vector input by the user. Return codes and descriptions.
-Uploaded for personal use but should still be functional.
+# find_read_codes
+Search UK Biobank clinical read 2/3 code lookup tables for codes beginning with a character or character vector input by the user. Return codes and descriptions. Not fully bug tested so please let me know of any issues.
 
 
 <h2>Requirements:</h2> <h3>Upload files read2_lkp.csv and read3_lkp.csv to working environment prior to running function.</h3>
