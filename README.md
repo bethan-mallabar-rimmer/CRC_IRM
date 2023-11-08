@@ -1,7 +1,7 @@
 # This repository is under construction. Files and pipleine will be uploaded here before submission to MedRxiv.
 In the meantime, a draft version of the repository can be found at: https://github.com/ID690016874/HPDM042
 
-**analysis.R** contains all the code used for the research project. It mostly runs on R version 4.1.1.
+**analysis.R** contains all the code used for the analysis. It mostly runs on R version 4.1.1.
 
 It's split into the following sections. Some sections require files as input, and sometimes analysis decisions were made based on descriptive graphs of the data. I.e. the code isn't designed to run from beginning to end non-stop & will probably need adapting to different datasets.
 
