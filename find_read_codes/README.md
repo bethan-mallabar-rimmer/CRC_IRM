@@ -29,7 +29,7 @@ A researcher needs to extract UK Biobank GP records for any patients with colore
 <b>3.</b> Run in R:</p>
 read_codes <- find_read_codes(c('B13','B14','B575','B1z','B803','B804','B902','BB5N'))</p>
   Running the above code will use the default/invisible settings of:</p>
-  find_read_codes(c('B13','B14','B575','B1z','B803','B804','B902','BB5N'), file1 = 'read2_lkp.csv', file2 = 'read3_lkp.csv', loop_limit = 3)</p>
+  find_read_codes(codes = c('B13','B14','B575','B1z','B803','B804','B902','BB5N'), file1 = 'read2_lkp.csv', file2 = 'read3_lkp.csv', loop_limit = 3)</p>
   File names and loop_limit can be specified if necessary.</p>
 <b>4.</b> Output: a table of any read codes starting with the above listed codes, plus their descriptions.</p>
 <b>5.</b> The researcher can manually look through output table to determine which codes are relevant.</p>
