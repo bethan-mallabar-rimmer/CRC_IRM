@@ -678,7 +678,7 @@ ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs), alpha = 0.4) +
   xlab('GRS')
 #yes, almost exactly the same - nothing weird going on!
 
-#comparing case v control GRS across all groups
+#comparing case v control GRS across all groups:
 ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 1]), alpha = 0.4, color='red') +
   geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 0]), alpha = 0.4) +
   geom_density(aes(x=p_v$p_5059_ve$grs[p_v$p_5059_ve$case == 1]), alpha = 0.4, color='red') +
@@ -690,7 +690,7 @@ ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 1]), alpha
   geom_density(aes(x=p_v$p_40_ve$grs[p_v$p_40_ve$case == 1]), alpha = 0.4, color='red') +
   geom_density(aes(x=p_v$p_40_ve$grs[p_v$p_40_ve$case == 0]), alpha = 0.4)
 
-#one at a time
+#comparing one cohort at a time:
 d4049 <- ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 1]), alpha = 0.4, linetype = 'dashed') +
   geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 0]), alpha = 0.4) +
   geom_vline(xintercept = mean(p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 1]), linetype='dashed') +
@@ -785,6 +785,7 @@ d7079m <- ggplot() + geom_density(aes(x=p_v$p_7079m_ve$grs[p_v$p_7079m_ve$case =
 #install.packages('patchwork')
 library(patchwork)
 
+#display plots together:
 gridfull <- d40 / (d40f + d40m) + plot_annotation(title = 'Full Cohort', theme = theme(plot.title = element_text(hjust = 0.5)))
 
 grid4049 <- d4049 + d4049f + d4049m + plot_annotation(title = 'Age 40-49', theme = theme(plot.title = element_text(hjust = 0.5)))
@@ -795,6 +796,7 @@ gridsub <- grid4049 / grid5059 / grid6069 / grid7079 + plot_annotation(title = '
 
 prs_cohort_distribution <- gridfull / wrap_elements(full = gridsub) + plot_layout(ncol=1, nrow=3, heights=c(0.5,0.5,4))
 
+#save to file:
 pdf(file = "prs_cohort_distribution.pdf",
     width = 8.27,
     height = 11.67)
@@ -836,26 +838,30 @@ or_list <- function(p_xx_v, col_list) {
 }
 
 lr_v <- lapply(p_v, function(x) or_list(x, c(4,7,16:23,26:45))) #indexing because some columns don't contain variables, & some variables don't contain enough data
-#i think that worked......
+#note: it turns out that logistic regression of the ordinal variables smoking status, alcohol intake and processed meat intake is
+#only assessing the first level of the variable (e.g. comparing 'never smoked' to 'previously smoked', but not comparing 'never' to 'current',
+#or 'previous' to 'current'.)
+#This wasn't fixed at this stage in the pipeline. However, supplementary table 6 contains logistic regression results for all levels
+#of ordinal variables. Additionally, no ordinal variable was included in the final integrated risk model, so this error does not affect
+#final study results.
 
-#List of only significant (p < 0.05 / 30) variables
+#make a list of only significant (p < 0.05 / 30, Bonferroni correction) variables:
 lrp_v <- replicate(length(lr_v), list(NA))
 
 #following function only works if every cohort has same number of variables (all have 30)
 temp <- unlist(lr_v)
-
 for (i in 1:length(lr_v)) { #for all 30 cohorts
   x <- c()
   print(names(lr_v)[i])
   v <- length(lr_v[[i]]) #for all 30 variables
   for (j in 1:v) {
     print(names(lr_v[[i]][j]))
-    #if p-value of variable < 0.05/30, append this variable number to a vector x of variables to keep
+    #if p-value of variable < 0.05/30, append this variable number to a vector called 'x' of variables to keep
     n <- v*4*(i-1) + j*4
     if (!is.na(temp[n]) & temp[n] < (0.05/v)) {x <- c(x,j); print('YES'); print(temp[v*4*(i-1) + j*4])}
     else {print('NO'); print(temp[v*4*(i-1) + j*4])}
     print(paste0('X IS ',x))
-    lrp_v[[i]] <- lr_v[[i]][x] #add to lrp_v the cohort, only including variables with sig p values
+    lrp_v[[i]] <- lr_v[[i]][x] #add logistic regression results for the cohort to lrp_v, only including variables with sig p values
   }
 }
 names(lrp_v) <- names(lr_v)
@@ -875,8 +881,8 @@ rocauc=function(form,dataframe,pt){
   return(roc)
 }
 
-#add ROCAUCs to list of significantly associated variables
-#---------------------------------------------------------
+#add ROCAUC values to list of logistic regression results for significantly associated variables
+#-----------------------------------------------------------------------------------------------
 add_rocauc <- function(p_x, lr_x, lrp_x) {
   for (i in 1:length(lr_x)) { #30 cohorts
     chrt <- names(lr_x)[i]
@@ -914,7 +920,7 @@ rocauc_jump <- function(lrp_xx, p_xx_v) {
   #create empty list:
   rocp <- replicate(length(lrp_xx), list(ROC = 0, LB = 0, UB = 0), simplify = FALSE)
   
-  for (i in 1:length(lrp_xx)) { #e.g., 1:7
+  for (i in 1:length(lrp_xx)) { #e.g., for i in 1:7
     for (j in 1:length(factors)) { #'factors' decreases in size with each loop, so this will be 1:7, then 1:6, then 1:5...
       
       #print out which model is currently being tested + the ROCAUC of that model:
@@ -947,8 +953,12 @@ rocauc_jump <- function(lrp_xx, p_xx_v) {
 rocauc_irm <- replicate(length(lr_v), list(NA))
 
 for (i in 1:length(p_v)) {
-  #get list of variables significantly associated with logistic regression, excluding FOB and ever smoked
-  x <- lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'ever_smoked')]
+  #get list of variables significantly associated with logistic regression, excluding FOB and smoking status
+  #FOB excluded because it doesn't make sense to exclude an existing (and outdated) diagnostic test in the risk model
+  #smoking status excluded because logistic regression showed people who previously smoked were more at risk of CRC
+  #in the two-year period then people who never smoked or reported currently smoking. This doesn't make much sense
+  #and might be due to underlying bias in this variable.
+  x <- lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'smoking_status')]
   
   if (length(x) != 0) {
     #do rocauc jump calculation for remaining variables
@@ -992,7 +1002,7 @@ rocauc_plot_e <- ggplot(data=rocauc_frame_40e, aes(x=var, y=aucs, ymin=LB, ymax=
   geom_point(colour = '#00C896', size=3) + geom_line(linetype = "dashed") + geom_errorbar(width=0.1) +
   HGtheme + xlab("variables added to integrated risk model") + ylab("ROC AUC") +
   scale_x_continuous(breaks=0:8, labels=c("none","age at\nfirst symptom", "& abdominal\npain",
-                                          "& PRS","& sex","& smoking\nstatus","& rectal\nbloodloss",
+                                          "& PRS","& sex","& ever\nsmoked","& rectal\nbloodloss",
                                           "& waist\ncircumference",
                                           "& change in\nbowel habits")) +
   scale_y_continuous(breaks=seq(0.5,0.85,by=0.05)) + theme(plot.margin = unit(c(5.5, 5.5, 20, 30), "points"))
@@ -1012,14 +1022,14 @@ aic_models <- replicate(length(lr_v), list(NA))
 for (i in 1:length(p_v)) { #15
   print(names(p_v[i]))
   
-  vlen <- length(lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'ever_smoked')])
+  vlen <- length(lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'smoking_status')])
   
   #if more than 0 significant variables:
   if (vlen != 0) {
     form_l <- sapply((1:vlen), function(x)
-      combn(names(lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'ever_smoked')]), x))
+      combn(names(lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'smoking_status')]), x))
     
-    if (length(form_l) != 0) { #if more than 0 significant variables (again - checking for the same thing stops function breaking?)
+    if (length(form_l) != 0) { #if more than 0 significant variables (again - checking for the same thing twice stops the function breaking?)
       form_c <- character()
       for (j in 1:vlen) {
         if (length(ncol(form_l[[j]])) != 0) { #if more than 1 significant variable:
