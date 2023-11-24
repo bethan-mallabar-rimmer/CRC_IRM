@@ -1,46 +1,3 @@
-system('dx upload splitcohort3.r --path /Bethan/CRCGRS/Split_Cohort/splitcohort3.r')
-
-saveRDS(lrp_v, "lrp_v.rds")
-system('dx upload lrp_v.rds --path /Bethan/CRCGRS/Split_Cohort/7_lrp_v_FINAL.rds')
-saveRDS(lr_v, "lr_v.rds")
-system('dx upload lr_v.rds --path /Bethan/CRCGRS/Split_Cohort/7_lr_v_FINAL.rds')
-saveRDS(p_v, "p_v.rds")
-system('dx upload p_v.rds --path /Bethan/CRCGRS/Split_Cohort/6_p_v_FINAL.rds')
-saveRDS(rocauc_v, "rocauc_v.rds")
-system('dx upload rocauc_v.rds --path /Bethan/CRCGRS/Split_Cohort/8_rocauc_v.rds')
-saveRDS(rocauc_irm, "rocauc_irm.rds")
-system('dx upload rocauc_irm.rds --path /Bethan/CRCGRS/Split_Cohort/8_rocauc_irm.rds')
-saveRDS(aic_irm, "aic_irm.rds")
-system('dx upload aic_irm.rds --path /Bethan/CRCGRS/Split_Cohort/9_aic_irm.rds')
-
-#:) Restart From Last Save-point :)
-#===================================
-#1. Codes and descriptions
-system('dx download file-GYv4xvjJZ8kkZb653VbKzvQ9') #filtered symptom read codes
-sym_codes_filtered <- readRDS("1_sym_codes_filtered.rds")
-system('dx download file-GYv4xx8JZ8kyqx9FQf00yjq3') #symptoms and categories
-symptom_type <- readRDS("1_symptom_type.rds")
-
-#2. Participants + symptoms
-system('dx download file-GYv8Zf8JZ8kgyPxGYvjZ06Gv') #filtered (i.e. no duplicate records)
-load("~/2_p_sym_filtered.RData")
-system('dx download file-GYv8bb0JZ8kqX3XKZ2VBpXZJ') #unfiltered (duplicate records)
-load("~/2_p_sym_unfiltered.RData")
-
-#3. Participants + case/control data
-system('dx download file-GYv90zjJZ8kZ0GB1KbzpvZ6j')
-load("~/3_p.RData")
-
-#6. Participants + variables (incl GRS)
-system('dx download file-GZ61450JZ8kpyVBV38G9KgxB')
-p_v <- readRDS("6_p_v_FINAL.rds")
-
-#7. LR testing
-system('dx download file-GYzQQpjJZ8kx102gvV2PFQxk')
-lr_v <- readRDS("7_lr_v.rds")
-system('dx download file-GYzQQzQJZ8kVv74PK2g6pVv0')
-lrp_v <- readRDS("7_lrp_v.rds")
-
 #0.These libraries are used throughout the script, good to enable them from the beginning:
 #========================================================================================
 library(dplyr)
@@ -55,12 +12,9 @@ source_url("https://raw.githubusercontent.com/hdg204/Rdna-nexus/main/install.R")
 #1A. Get read 2/3 codes and descriptions for CRC symptoms
 #=======================================================
 #import DISCO read codes for CRC symptoms, and lookup tables for all read codes
-system('dx download file-GF44Fk8JZ8kVY4P81485z83f') # download read 2 lookup table
-system('dx download file-GF44Fk8JZ8kb5F2f44xZKPxF') # download read 3 lookup table
-system('dx download file-GPQKJ7QJZ8kxqFkGVXXP5bqY') # download CRC symptom read codes from DISCO
-lkp2 <- read.csv('read2_lkp.csv')
-lkp3 <- read.csv('read3_lkp.csv')
-disco <- read.csv('00_DISCO_crc_symptoms.csv')
+lkp2 <- read.csv('read2_lkp.csv') # download read 2 lookup table
+lkp3 <- read.csv('read3_lkp.csv') # download read 3 lookup table
+disco <- read.csv('00_DISCO_crc_symptoms.csv') # download CRC symptom read codes from DISCO
 
 #reformat DISCO read codes to 5 characters, same as UKBB read code format:
 #-------------------------------------------------------------------------
@@ -91,9 +45,8 @@ sym_codes_filtered <- sym_codes_filtered[!duplicated(sym_codes_filtered$code),]
 
 #import list of symptom codes for rectal bleeding found by Matt Barclay @ UCL:
 #----------------------------------------------------------------------------
-system('dx download file-GVf94yQJZ8kXV73Pk1F21q1V')
-ucl_codes_rb <- read.csv('00_rectal_bleeding_comparison.csv')
-ucl_codes_rb <- ucl_codes_rb[ucl_codes_rb$code_source == 'Matt',]
+ucl_codes_rb <- read.csv('00_rectal_bleeding_comparison.csv') #import codes
+ucl_codes_rb <- ucl_codes_rb[ucl_codes_rb$code_source == 'Matt',] #label with source
 
 #each read code has 2 entries, one with a 'count' value (how many times recorded)
 #for 2010 and the other for 2015. These aren't as relevant for this analysis, so
@@ -103,7 +56,7 @@ ucl_codes_rb <- ucl_codes_rb %>% group_by(read) %>% mutate(total_count = sum(cou
 
 #add term descriptions to the UCL codes:
 #-----------------------------------------
-#run find_read_codes function again to simultaneously expand code list and add term descriptions
+#run find_read_codes function again to simultaneously expand code list and add term descriptions:
 find_ucl_codes <- find_read_codes(unique(ucl_codes_rb$read))
 ucl_codes_rb <- ucl_codes_rb %>% rename(code=read) %>% full_join(find_ucl_codes)
 #remove irrelevant codes
@@ -206,7 +159,7 @@ symptom_type <- symptom_type[!duplicated(symptom_type$readcode),]
 #also remove one rigidity code accidentally typed as abdominal pain:
 symptom_type <- symptom_type[!(symptom_type$readcode %in% c('25F2.','25F..','25FZ.')),-11]
 
-#differentiate between unintentional and unspecified-whether-unintentional weightloss:
+#differentiate between unintentional and unspecified-whether-intentional weightloss:
 symptom_type$unintentional_weightloss <- NA
 symptom_type$unintentional_weightloss[symptom_type$readcode
                                       %in% c('1625.','1627.','1D1A.','2224.',
@@ -215,16 +168,20 @@ symptom_type$unintentional_weightloss[symptom_type$readcode
                                              'XaJM4','XaKwR','XaXTs')] <- 1
 symptom_type$other_weightloss <- NA
 symptom_type$other_weightloss[symptom_type$readcode %in% c('22A8.','XaIxC','1623.')] <- 1
-symptom_type <- symptom_type[,c(1:2,11:12,3:10)]
+symptom_type <- symptom_type[,c(1:2,11:12,3:10)] #reorder columns
 
 #2A. Find UKBB participants with symptoms
 #=======================================
 p_sym <- read_GP(sym_codes_filtered$code)
 
 #exclude participants who requested their data be removed from UKBB:
-#system('dx download file-GZ5XGy0JZ8kYZZvQq973FzZ2')
 withdraw <- read.csv('UKBB_withdrawals-25.04.23.csv',header = T)
 p_sym <- filter(p_sym, !(eid %in% withdraw$X1003904))
+#the above csv file was provided by UKBB via email. This step is only important if you
+#have an existing file with UKBB participant data, which includes participants who have
+#requested to withdraw their data from the study. If you are creating a new participant
+#data file, then participants who requested data withdrawal are already removed from UKBB
+#and will not be in the new file.
 
 #number each symptom record, as there are multiple records per participant
 p_sym$no <- 1:nrow(p_sym)
@@ -232,15 +189,15 @@ p_sym$no <- 1:nrow(p_sym)
 #2B. Any participants with a read code for haemoglobin level were included
 #Exclude participants with normal haemoglobin level or no measurement
 #======================================================================
-#df of participants with haemoglobin level recorded:
+#dataframe of participants with haemoglobin level recorded:
 exclude <- p_sym[p_sym$read_2 %in% c('44TC.','XaBLm') | p_sym$read_3 %in% c('44TC.','XaBLm'),]
 
-#import a table including participant IDs + all the lifestyle variables/chacteristics assessed in this study
+#import a table including participant IDs + all the variables/risk factors (environmental, health,
+#characteristics e.g. age and sex, etc) assessed in this study
 #table was generated on the DNA Nexus UKBB research analysis platform
-system('dx download file-GQ3Vx5QJgVq8BpQ3GkZkYkpF')
 UKBB_var <- read.csv('00_participant.csv') 
 
-#use the above participant table to add participant sex to haemoglobin df:
+#use the above participant table to add participant sex to haemoglobin dataframe:
 exclude <- left_join(exclude, UKBB_var[,c(1,5)]) #(sex was in column 5 of the table)
 
 #find participants with low haemoglobin levels ('low' is sex-dependent)
@@ -260,7 +217,7 @@ p_sym <- p_sym[!(p_sym$no %in% exclude$no),]
 #==================================================================
 #add date of birth for all participants:
 UKBB_var$dob <- 15 #actual DoB unknown for privacy reasons. assume 15th of each month to minimise error
-UKBB_var$dob <- apply(UKBB_var[,c(22,3,4)], 1, paste, collapse = "-") #col 3 in UKBB_var table is birth month, col 4 is birth year, col 22 is the new 'dob' column added in the above line
+UKBB_var$dob <- apply(UKBB_var[,c(22,3,4)], 1, paste, collapse = "-") #col 3 in UKBB_var table is birth month, col 4 is birth year, col 22 is the new column called 'dob' added in the above line
 UKBB_var$dob <- as.Date(UKBB_var$dob, format = "%d-%B-%Y")
 p_sym <- left_join(p_sym, UKBB_var[,c(1,22)])
 
@@ -271,21 +228,19 @@ p_sym$sym_age <- lubridate::time_length(difftime(p_sym$event_dt,
                                         "years")
 p_sym$sym_age <- as.integer(p_sym$sym_age)  
 
-#For analysis of whole cohort, include any symptoms occurring after age 40 or 50:
-#===============================================================================
 #version 1: exclude symptoms which occurred before participants were 50:
 p_sym_50 <- p_sym[p_sym$sym_age >= 50,]
 #version 2: exclude symptoms which occurred before participants were 40:
 p_sym_40 <- p_sym[p_sym$sym_age >= 40,]
 
-#2D. Include only symptom with earliest date for each patient
-#===========================================================
+#2D. Include only symptom record with earliest date for each patient
+#===================================================================
 get_earliest_symptom <- function(p_sym_n) {
   p_sym_filtered <- p_sym_n
   p_sym_filtered[,4:5][p_sym_filtered[,4:5] == ''] <- NA #cols 4 and 5 of the participant symptom records table contain read 2 and 3 codes
   p_sym_filtered <- p_sym_filtered %>%
-    group_by(eid) %>%
     #get earliest symptom for each patient
+    group_by(eid) %>%
     slice_min(event_dt) %>%
     #remove duplicate records (where same symptoms appears multiple times on same date)
     distinct(eid, read_2, read_3, .keep_all = TRUE) 
