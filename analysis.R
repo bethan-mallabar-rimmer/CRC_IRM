@@ -192,8 +192,7 @@ p_sym$no <- 1:nrow(p_sym)
 #dataframe of participants with haemoglobin level recorded:
 exclude <- p_sym[p_sym$read_2 %in% c('44TC.','XaBLm') | p_sym$read_3 %in% c('44TC.','XaBLm'),]
 
-#import a table including participant IDs + all the variables/risk factors (environmental, health,
-#characteristics e.g. age and sex, etc) assessed in this study
+#import a table including participant IDs + all the lifestyle variables/chacteristics assessed in this study
 #table was generated on the DNA Nexus UKBB research analysis platform
 UKBB_var <- read.csv('00_participant.csv') 
 
@@ -296,8 +295,6 @@ crc_50 <- first_occurence_age(ICD10 = crc_codes_icd10_filtered,
 #3B. Add crc data to participants table
 #======================================
 #required files:
-system('dx download file-GBZxfJ8Jx6FgpyB123qKqBFq') #date of death
-system('dx download file-GBZxfJ8Jx6FXzgFv8zYGgypJ') #cause of death
 death <- read.csv('death_death.csv') #date of death - only columns used for analysis were participant ID and date of death formatted: year-month-day
 death_cause <- read.csv('death_death_cause.csv') #cause of death - only columns used were participant ID and 'cause_icd10' which contains: ICD10code<space>description of code
 
@@ -386,7 +383,7 @@ density50 <- p_50 %>% ggplot() +
 
 #going with age threshold 40 because it increases case to control ratio without excluding too many participants
 
-#4A. exclude participants which are neither cases nor controls (i.e. don't meet study inclusion criteria)
+#4A. exclude participants who are neither cases nor controls (i.e. don't meet study inclusion criteria)
 #=================================================================================================
 #p_00_v <- p_00 %>% filter(!(case == 'exclude'))
 p_40_v <- p_40 %>% filter(!(case == 'exclude'))
@@ -395,12 +392,11 @@ p_40_v <- p_40 %>% filter(!(case == 'exclude'))
 #4B. Add UKBB variables
 #=====================
 #import some tables of UKBB variables for all UKBB participants:
-system('dx download file-GKv2P0jJX3ZP03jk5pQvVyg9') #UKBB variables
-var <- read.csv('00_participant_variables.csv')
-system('dx download file-GPgj2VjJpz528BzPP13ggFVY') #family history
-fh <- read.csv('00_participant_FH.csv')
+var <- read.csv('00_participant_variables.csv') #UKBB variables
+fh <- read.csv('00_participant_FH.csv') #family history (the only reason it's in a separate file is because I decided to include it in
+                                        #in the analysis at a later date)
 
-#list of UKBB variable names/codes in the table vs. what I renamed them, for reference:
+#list of UKBB variable names/codes in the table vs. what they were renamed to, for reference:
 UKBB_var_names <- list('eid' = 'eid',
                        'age' = 'p21022',
                        'dob_m' = "p52",
@@ -505,8 +501,6 @@ add_symptoms <- function(p_xx_v, p_sym_filtered_xx) {
   p_st <- p_st %>% 
     group_by(eid) %>% #for each participant
     summarise(across(2:12, sum)) #sum total number of times each symptom was recorded
-  #there are only 12 columns because readcode is removed after grouping with eid - not sure if a problem?
-  #in 'p' table (which now also has readcode removed) you may need to add readcode(s) back as a semi-colon separated list
   
   #if any value in the symptom columns is >1, convert it to 1
   #(don't need to know how many times one symptom type, e.g. weight loss, was
@@ -552,7 +546,6 @@ p_40_v <- add_haem(p_40_v)
 #including haemoglobin levels measured 2 years of either side of symptom date reduces
 #participants with haemoglobin levels to only 2 participants.
 #Even with this there were so few haemoglobin measurements that they couldn't be meaningfully analysed with logistic regression
-#so haemoglobin level was not included as one of the 24 variables in the study.
 
 #4E. reorder columns
 #==================
@@ -583,55 +576,47 @@ factorise <- function(p_xx_v) {
 
 p_40_v <- factorise(p_40_v)
 
-#5. Split cohort into So Many
-#============================
+#5. Split cohort by ancestry, age, and sex
+#==========================================
 #whole cohort:
-system('dx download file-GZ4g538JZ8kXGjqJbQpKq3p5') #list of unrelated African ancestry participants
-afr <- read.table('AFR_8k_subject_list_unrelated.txt', header = TRUE)
-system('dx download file-GZ4g560JZ8kgq110Y6B24Yp7') #list of unrelated European ancestry participants
-eur <- read.table('EUR_451k_subject_list_unrelated.txt', header = TRUE)
-system('dx download file-GZ4g570JZ8kjZ674gy7p30F6') #list of unrelated South Asian ancestry participants
-sas <- read.table('SAS_10k_subject_list_unrelated.txt', header = TRUE)
-system('dx download file-GZ4g550JZ8kyfffjfG1fV9z7') #list of unrelated East Asian ancestry participants
-eas <- read.table('EAS_2482_subject_list_unrelated.txt', header = TRUE)
-system('dx download file-GZ4g54QJZ8ky3pXV7kvJ29Vb') #list of unrelated Admixed American ancestry participants
-amr <- read.table('AMR_468_subject_list_unrelated.txt', header = TRUE)
+afr <- read.table('AFR_8k_subject_list_unrelated.txt', header = TRUE) #list of unrelated African ancestry participants
+eur <- read.table('EUR_451k_subject_list_unrelated.txt', header = TRUE) #list of unrelated European ancestry participants
+sas <- read.table('SAS_10k_subject_list_unrelated.txt', header = TRUE) #list of unrelated South Asian ancestry participants
+eas <- read.table('EAS_2482_subject_list_unrelated.txt', header = TRUE) #list of unrelated East Asian ancestry participants
+amr <- read.table('AMR_468_subject_list_unrelated.txt', header = TRUE) #list of unrelated Admixed American ancestry participants
 
 #splitting by ancestry:
-p_40_va <- filter(p_40_v, eid %in% afr$n_eid) #AFR: 7 cases
+p_40_va <- filter(p_40_v, eid %in% afr$n_eid) #AFR: 7 cases in cohort
 p_40_ve <- filter(p_40_v, eid %in% eur$n_eid) #EUR: 625 cases
 p_40_vs <- filter(p_40_v, eid %in% sas$n_eid) #SAS: 5 cases
 p_40_veas <- filter(p_40_v, eid %in% eas$n_eid) #EAS: 0 controls or cases
 p_40_vamr <- filter(p_40_v, eid %in% amr$n_eid) #AMR: 0 controls or cases
 
 #the analysis can only be run in participants with European ancestry due to
-#insufficient sample size. Combine AFR and SAS into a mixed-ancestry cohort
-#which might be useful for testing later:
-p_40_vm <- filter(p_40_v, eid %in% afr$n_eid | eid %in% sas$n_eid)
-
-#Split the European cohort for sensitivity analyses
+#insufficient sample size
+#split the European cohort for sensitivity analyses:
 #age
-p_4049_ve <- filter(p_40_ve, sym_age >= 40 & sym_age <50) #55 cases
-p_5059_ve <- filter(p_40_ve, sym_age >= 50 & sym_age <60) #180 cases
-p_6069_ve <- filter(p_40_ve, sym_age >= 60 & sym_age <70) #300 cases
-p_7079_ve <- filter(p_40_ve, sym_age >= 70) #90
+p_4049_ve <- filter(p_40_ve, sym_age >= 40 & sym_age <50) #40-49: 55 cases
+p_5059_ve <- filter(p_40_ve, sym_age >= 50 & sym_age <60) #50-59: 180 cases
+p_6069_ve <- filter(p_40_ve, sym_age >= 60 & sym_age <70) #60-69: 300 cases
+p_7079_ve <- filter(p_40_ve, sym_age >= 70) #70-79: 90 cases
 
 #sex
-p_40f_ve <- filter(p_40_ve, sex == "Female") #257
-p_40m_ve <- filter(p_40_ve, sex == "Male") #368
+p_40f_ve <- filter(p_40_ve, sex == "Female") #female all ages: 257 cases
+p_40m_ve <- filter(p_40_ve, sex == "Male") #male all ages: 368 cases
 
 #age and sex
-p_4049f_ve <- filter(p_4049_ve, sex == "Female") #32
-p_4049m_ve <- filter(p_4049_ve, sex == "Male") #23
+p_4049f_ve <- filter(p_4049_ve, sex == "Female") #female 40-49: 32 cases
+p_4049m_ve <- filter(p_4049_ve, sex == "Male") #male 40-49: 23 cases
 
-p_5059f_ve <- filter(p_5059_ve, sex == "Female") #83
-p_5059m_ve <- filter(p_5059_ve, sex == "Male") #97
+p_5059f_ve <- filter(p_5059_ve, sex == "Female") #female 50-59: 83 cases
+p_5059m_ve <- filter(p_5059_ve, sex == "Male") #male 50-59: 97 cases
 
-p_6069f_ve <- filter(p_6069_ve, sex == "Female") #115
-p_6069m_ve <- filter(p_6069_ve, sex == "Male") #185
+p_6069f_ve <- filter(p_6069_ve, sex == "Female") #female 60-69: 115 cases
+p_6069m_ve <- filter(p_6069_ve, sex == "Male") #male 60-69: 185 cases
 
-p_7079f_ve <- filter(p_7079_ve, sex == "Female") #27
-p_7079m_ve <- filter(p_7079_ve, sex == "Male") #63
+p_7079f_ve <- filter(p_7079_ve, sex == "Female") #female 70-79: 27 cases
+p_7079m_ve <- filter(p_7079_ve, sex == "Male") #male 70-79: 63 cases
 
 
 #put all data frames in a list
@@ -649,10 +634,8 @@ names(p_v) <- c('p_40_ve', 'p_4049_ve', 'p_5059_ve', 'p_6069_ve', 'p_7079_ve',
 #====================================
 #generate GRS for all UKBB participants using source_url("https://raw.githubusercontent.com/hdg204/Rdna-nexus/main/install.R")
 #note this requires a tab-separated table of risk-associated variants, with the following columns: chr, bp, other, effect, weight
-#(other and effect refer to the alleles which do or don't impact CRC risk, weight is the beta)
+#(effect and other refer to the alleles which do or don't impact CRC risk, weight is the beta)
 grs <- generate_grs('00_GRS_snplist.tsv')
-#or if this step is already complete:
-#system('dx download file-GPY7gvjJZ8kg62J6K950fPv7'); grs <- readRDS("6_GRS.rds")
 
 #copy whole cohort dataframe and add GRS
 p_grs <- filter(grs$grs, eid %in% p_v$p_40_ve$eid)
