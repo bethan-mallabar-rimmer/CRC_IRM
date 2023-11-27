@@ -1,1 +1,152 @@
+#required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
+#p_v from Section 6
 
+#cohort numbers
+#==============
+ST_c <- matrix(rep(NA, times=(14*15*3)), ncol=15*3, byrow=TRUE)
+
+for (i in 1:15) {
+  print(i)
+  #cases
+  #N
+  ST_c[1,((i*3)-2)] <- paste0(sum(p_v[[i]]$case == 1),
+                              ' (',
+                              round(sum(p_v[[i]]$case == 1)/nrow(p_v[[i]])*100,2),
+                              '%)')
+  #sex
+  ST_c[3,((i*3)-2)] <- paste0(sum(p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 1),
+                               ' (',
+                               round(sum(p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 1)/sum(p_v[[i]]$case == 1)*100,2),
+                               '%)')
+  ST_c[4,((i*3)-2)] <- paste0(sum(p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 1),
+                               ' (',
+                               round(sum(p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 1)/sum(p_v[[i]]$case == 1)*100,2),
+                               '%)')
+  #age at recruitment
+  ST_c[6,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$recruitment_age[p_v[[i]]$case == 1]),2),
+                              ' (+/- ',
+                              round(sd(p_v[[i]]$recruitment_age[p_v[[i]]$case == 1]),2),
+                              ')')
+  #age at first symptom
+  ST_c[8,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$sym_age[p_v[[i]]$case == 1]),2),
+                              ' (+/- ',
+                              round(sd(p_v[[i]]$sym_age[p_v[[i]]$case == 1]),2),
+                              ')')
+
+  #bmi
+  ST_c[10,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$BMI[p_v[[i]]$case == 1], na.rm = T),2),
+                              ' (+/- ',
+                              round(sd(p_v[[i]]$BMI[p_v[[i]]$case == 1], na.rm = T),2),
+                              ')')
+  
+  #waist circumference
+  ST_c[12,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$waist_circumference[p_v[[i]]$case == 1], na.rm = T),2),
+                              ' (+/- ',
+                              round(sd(p_v[[i]]$waist_circumference[p_v[[i]]$case == 1], na.rm = T),2),
+                              ')')
+  #townsend deprivation index
+  ST_c[14,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$TDI[p_v[[i]]$case == 1], na.rm = T),2),
+                               ' (+/- ',
+                               round(sd(p_v[[i]]$TDI[p_v[[i]]$case == 1], na.rm = T),2),
+                               ')')
+
+  #controls
+  #N
+  ST_c[1,((i*3)-1)] <- paste0(sum(p_v[[i]]$case == 0),
+                              ' (',
+                              round(sum(p_v[[i]]$case == 0)/nrow(p_v[[i]])*100,2),
+                              '%)')
+  #sex
+  ST_c[3,((i*3)-1)] <- paste0(sum(p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 0),
+                              ' (',
+                              round(sum(p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 0)/sum(p_v[[i]]$case == 0)*100,2),
+                              '%)')
+  ST_c[4,((i*3)-1)] <- paste0(sum(p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 0),
+                              ' (',
+                              round(sum(p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 0)/sum(p_v[[i]]$case == 0)*100,2),
+                              '%)')
+  #age at recruitment
+  ST_c[6,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$recruitment_age[p_v[[i]]$case == 0]),2),
+                              ' (+/- ',
+                              round(sd(p_v[[i]]$recruitment_age[p_v[[i]]$case == 0]),2),
+                              ')')
+  #age at first symptom
+  ST_c[8,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$sym_age[p_v[[i]]$case == 0]),2),
+                              ' (+/- ',
+                              round(sd(p_v[[i]]$sym_age[p_v[[i]]$case == 0]),2),
+                              ')')
+  
+  #bmi
+  ST_c[10,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$BMI[p_v[[i]]$case == 0], na.rm = T),2),
+                               ' (+/- ',
+                               round(sd(p_v[[i]]$BMI[p_v[[i]]$case == 0], na.rm = T),2),
+                               ')')
+  
+  #waist circumference
+  ST_c[12,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$waist_circumference[p_v[[i]]$case == 0], na.rm = T),2),
+                               ' (+/- ',
+                               round(sd(p_v[[i]]$waist_circumference[p_v[[i]]$case == 0], na.rm = T),2),
+                               ')')
+  #townsend deprivation index
+  ST_c[14,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$TDI[p_v[[i]]$case == 0], na.rm = T),2),
+                               ' (+/- ',
+                               round(sd(p_v[[i]]$TDI[p_v[[i]]$case == 0], na.rm = T),2),
+                               ')')
+  #total
+  #N
+  ST_c[1,(i*3)] <- paste0(nrow(p_v[[i]]),' (100%)')
+  #sex
+  ST_c[3,(i*3)] <- paste0(nrow(p_v[[i]][p_v[[i]]$sex == 'Female',]),
+                              ' (',
+                              round(nrow(p_v[[i]][p_v[[i]]$sex == 'Female',])/nrow(p_v[[i]])*100,2),
+                              '%)')
+  ST_c[4,(i*3)] <- paste0(nrow(p_v[[i]][p_v[[i]]$sex == 'Male',]),
+                          ' (',
+                          round(nrow(p_v[[i]][p_v[[i]]$sex == 'Male',])/nrow(p_v[[i]])*100,2),
+                          '%)')
+  #age at recruitment
+  ST_c[6,(i*3)] <- paste0(round(mean(p_v[[i]]$recruitment_age),2),
+                              ' (+/- ',
+                              round(sd(p_v[[i]]$recruitment_age),2),
+                              ')')
+  #age at first symptom
+  ST_c[8,(i*3)] <- paste0(round(mean(p_v[[i]]$sym_age),2),
+                              ' (+/- ',
+                              round(sd(p_v[[i]]$sym_age),2),
+                              ')')
+  
+  #bmi
+  ST_c[10,(i*3)] <- paste0(round(mean(p_v[[i]]$BMI, na.rm = T),2),
+                               ' (+/- ',
+                               round(sd(p_v[[i]]$BMI, na.rm = T),2),
+                               ')')
+  
+  #waist circumference
+  ST_c[12,(i*3)] <- paste0(round(mean(p_v[[i]]$waist_circumference, na.rm = T),2),
+                               ' (+/- ',
+                               round(sd(p_v[[i]]$waist_circumference, na.rm = T),2),
+                               ')')
+  #townsend deprivation index
+  ST_c[14,(i*3)] <- paste0(round(mean(p_v[[i]]$TDI, na.rm = T),2),
+                               ' (+/- ',
+                               round(sd(p_v[[i]]$TDI, na.rm = T),2),
+                               ')')
+}
+
+rownames(ST_c) <- c('N (% of cohort)', 'Sex (patient self-reported)',
+                    'Female (% of cases/controls/total)',
+                    'Male (% of cases/controls/total)',
+                    'Age at UKBB baseline/recruitment (years)',
+                    'Mean (+/- SD) 1',
+                    'Age at first CRC symptom (years)',
+                    'Mean (+/- SD) 2',
+                    'Body mass index (BMI) (kg/m^2)',
+                    'Mean (+/- SD) 3',
+                    'Waist circumference (cm)',
+                    'Mean (+/- SD) 4',
+                    'Townsend deprivation index (TDI)',
+                    'Mean (+/- SD) 5')
+
+colnames(ST_c) <- rep(names(p_v),each=3)
+
+write.csv(ST_c, "ST_2.csv", row.names=T)
