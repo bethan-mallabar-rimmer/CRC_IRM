@@ -1086,4 +1086,15 @@ for (i in 1:length(p_v)) { #15
 names(aic_irm) <- names(p_v)
 names(aic_models) <- names(p_v)
 
-
+#10 Conclusion and model ROCAUCs
+#=================================
+#Building model iteratively with ROCAUC suggests best risk model is ~sym_age+abdo_pain+grs+sex
+#Get ROCAUC of this model:
+rocauc('case~sym_age+abdo_pain+grs+sex', p_v$p_40_ve, TRUE)
+#AIC suggests best model is ~sym_age+abdo_pain+grs+sex+rectal_bloodloss+change_bowel_habit
+#Get ROCAUC:
+rocauc('case~sym_age+abdo_pain+grs+sex+rectal_bloodloss+change_bowel_habit', p_v$p_40_ve, TRUE)              
+                     
+#And of GRS alone:
+rocauc('case~grs', p_v$p_40_ve, TRUE)
+                     
