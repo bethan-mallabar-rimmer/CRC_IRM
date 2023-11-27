@@ -1,0 +1,39 @@
+#required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
+#p_v from Section 6
+
+#Missing variables
+#=================
+ST_mis <- matrix(rep(NA, times=length(p_v$p_40_ve)*15), ncol=15, byrow=TRUE)
+colnames(ST_mis) <- names(p_v)
+rownames(ST_mis) <- names(p_v$p_40_ve)
+
+for (i in 1:ncol(ST_mis)) {
+  for (j in 1:nrow(ST_mis)) {
+    ST_mis[j,i] <- paste0(sum(!is.na(p_v[[i]][[j]])),' (',round(sum(!is.na(p_v[[i]][[j]]))/nrow(p_v[[i]])*100,2),'%)')
+  }
+}
+
+ST_4 <- rbind(ST_mis[4,], ST_mis[7,], ST_mis[c(16:21),], ST_mis[23,], ST_mis[22,], ST_mis[c(26:28),], ST_mis[45,], ST_mis[44,], ST_mis[39,])
+
+rownames(ST_4) <- c('Sex (female/male)',
+'Age at first CRC symptom (years)',
+'Townsend deprivation index (TDI)',
+'Body mass index (BMI) (kg/m2)',
+'Waist circumference (cm)',
+'Ever smoked (yes/no)',
+'Smoking status (current/previous/never)',
+'Alcohol intake (never/special occasions only/one to three times a month/once or twice a week/three or four times a week/daily or almost daily)',
+'Processed meat intake (never/less than once a week/once a week/2-4 times a week/5-6 times a week/once or more daily)',
+'Participant self-reported a prior diagnosis of diabetes  (yes/no)',
+'Participant’s mother ever had CRC (yes/no)',
+'Participant’s father ever had CRC (yes/no)',
+'Participant’s parents ever had CRC (0, 1, or 2 parents ever had CRC)',
+'Polygenic risk score (PRS)',
+'Genetic principal components 1-5',
+'9 x symptom variables listed in Supplementary Table 1')
+
+colnames(ST_4) <- c('Full cohort','40-49','50-59','60-69','70-79',
+'Female','Male','F 40-49','M 40-49','F 50-59','M 50-59','F 60-69','M 60-69','F 70-79','M 70-79')
+
+
+write.csv(ST_4, "ST_4.csv", row.names=T)
