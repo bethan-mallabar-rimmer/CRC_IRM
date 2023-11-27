@@ -1,1 +1,47 @@
+#required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
+#symptom_type from Section 1 (not Section 4D where symptom_type was edited a bit)
+#p_v from Section 6
 
+#N participants with each symptom
+#=================================
+#make the table
+ST_psym <- matrix(rep(NA, times=(ncol(symptom_type)-1)*15), ncol=15, byrow=TRUE)
+colnames(ST_psym) <- names(p_v)
+rownames(ST_psym) <- c('abdo_pain','abdo_mass','change_bowel_habit','fob',
+                       'iron_def','haemoglobin','loss_appetite','rectal_bloodloss',
+                       'weightloss','unintentional_weightloss','other_weightloss')
+
+#fill in table with number of participants with each symptom, plus % of these participants who were cases
+for (i in 1:ncol(ST_psym)) {
+  for (j in 1:nrow(ST_psym)) {
+    ST_psym[j,i] <- paste0(
+      sum(p_v[[i]][which(names(p_v[[i]]) == rownames(ST_psym)[j])] == 1),
+      ' (',
+      round(sum(p_v[[i]][which(names(p_v[[i]]) == rownames(ST_psym)[j])] == 1)/
+              nrow(p_v[[i]][which(names(p_v[[i]]) == rownames(ST_psym)[j])])*100,2),
+      '%)'
+    )
+  }
+}
+
+#add number of read codes for each symptom
+read_number <- c(sum(symptom_type$abdo_pain == 1, na.rm = T), sum(symptom_type$abdo_mass == 1, na.rm = T), 
+sum(symptom_type$change_bowel_habit == 1, na.rm = T), sum(symptom_type$fob == 1, na.rm = T), 
+sum(symptom_type$iron_def == 1, na.rm = T), sum(symptom_type$haemoglobin == 1, na.rm = T), 
+sum(symptom_type$loss_appetite == 1, na.rm = T), sum(symptom_type$rectal_bloodloss == 1, na.rm = T), 
+sum(symptom_type$weightloss == 1, na.rm = T), sum(symptom_type$unintentional_weightloss == 1, na.rm = T), 
+sum(symptom_type$other_weightloss == 1, na.rm = T))
+
+ST_1 <- cbind(read_number, ST_psym)
+ST_1 <- rbind(ST_1, rep(NA, ncol(ST_1)))
+
+#rename rows and cols
+colnames(ST_1) <- c('Number of read codes','Full cohort','40-49','50-59','60-69','70-79',
+'Female','Male','F 40-49','M 40-49','F 50-59','M 50-59','F 60-69','M 60-69','F 70-79','M 70-79')
+rownames(ST_1) <- c('Abdominal pain','Abdominal mass','Change in bowel habit',
+'Faecal occult blood (FOB) test abnormal','Iron deficiency','Low haemoglobin','Loss of appetite',
+'Rectal bleeding','Weight loss','specified as unintentional weight loss','unspecified whether intentional',
+'Total')
+ST_1[12,1] <- sum(as.numeric(ST_1[c(1:11),1]))
+
+write.csv(ST_1, "ST_1.csv", row.names=T)
