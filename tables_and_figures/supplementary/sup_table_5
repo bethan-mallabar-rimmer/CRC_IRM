@@ -1,0 +1,420 @@
+aaa <- c('sex','female','male','ever smoked','no','yes',
+         'smoking status','never','previous','current',
+         'alcohol intake','never','special occasions only',
+         'one to three times a month','once or twice a week',
+         'three or four times a week','daily or almost daily',
+         'processed meat intake','never','less than once a week',
+         'once a week','2-4 times a week','5-6 times a week',
+         'once or more daily',
+         'participant self-reported a prior diagnosis of diabetes',
+         'no','yes',
+         'participant self-reported parents had bowel cancer',
+         'no','father only','mother only','both',
+         'polygenic risk score quintile',
+         '1 (lowest)','2','3','4','5 (highest)',
+         'symptom variables',
+         'abdominal pain',
+         'yes','no',
+         'abdominal mass',
+         'yes','no',
+         'change in bowel habits',
+         'yes','no',
+         'faecal occult blood (FOB) test abnormal',
+         'yes','no',
+         'iron deficiency',
+         'yes','no',
+         'low haemoglobin',
+         'yes','no',
+         'loss of appetite',
+         'yes','no',
+         'rectal bleeding',
+         'yes','no',
+         'weight loss',
+         'yes','no',
+         'weight loss (specified as unintentional)',
+         'yes','no',
+         'weight loss (not specified whether intentional)',
+         'yes','no')
+
+ST_inc <- matrix(rep(NA, times=(length(aaa))*15*2), ncol=30, byrow=TRUE)
+
+
+for (i in 1:15) {
+  print(names(p_v)[i])
+  #cases
+  #sex
+  ST_inc[2,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$sex == 'Female' & p_v[[i]]$case == 1,]),
+                        ' (',
+                        nrow(p_v[[i]][p_v[[i]]$sex == 'Female' & p_v[[i]]$case == 1,])/
+                          nrow(p_v[[i]][p_v[[i]]$sex == 'Female',])*100,
+                        '%)')
+  print('F1 done')
+  ST_inc[3,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$sex == 'Male' & p_v[[i]]$case == 1,]),
+                        ' (',
+                        nrow(p_v[[i]][p_v[[i]]$sex == 'Male' & p_v[[i]]$case == 1,])/
+                          nrow(p_v[[i]][p_v[[i]]$sex == 'Male',])*100,
+                        '%)')
+  #ever smoked
+  ST_inc[5,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$ever_smoked == 'No' & p_v[[i]]$case == 1,]),
+                        ' (',
+                        nrow(p_v[[i]][p_v[[i]]$ever_smoked == 'No' & p_v[[i]]$case == 1,])/
+                          nrow(p_v[[i]][p_v[[i]]$ever_smoked == 'No',])*100,
+                        '%)')
+  ST_inc[6,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$ever_smoked == 'Yes' & p_v[[i]]$case == 1,]),
+                        ' (',
+                        nrow(p_v[[i]][p_v[[i]]$ever_smoked == 'Yes' & p_v[[i]]$case == 1,])/
+                          nrow(p_v[[i]][p_v[[i]]$ever_smoked == 'Yes',])*100,
+                        '%)')
+  #smoking status
+  ST_inc[8,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Never' & p_v[[i]]$case == 1,]),
+                        ' (',
+                        nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Never' & p_v[[i]]$case == 1,])/
+                          nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Never',])*100,
+                        '%)')
+  ST_inc[9,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Previous' & p_v[[i]]$case == 1,]),
+                        ' (',
+                        nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Previous' & p_v[[i]]$case == 1,])/
+                          nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Previous',])*100,
+                        '%)')
+  ST_inc[10,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Current' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Current' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$smoking_status == 'Current',])*100,
+                         '%)')
+  #alcohol intake
+  ST_inc[12,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Never' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Never' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Never',])*100,
+                         '%)')
+  ST_inc[13,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Special occasions only' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Special occasions only' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Special occasions only',])*100,
+                         '%)')
+  ST_inc[14,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'One to three times a month' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'One to three times a month' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'One to three times a month',])*100,
+                         '%)')
+  ST_inc[15,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Once or twice a week' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Once or twice a week' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Once or twice a week',])*100,
+                         '%)')
+  ST_inc[16,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Three or four times a week' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Three or four times a week' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Three or four times a week',])*100,
+                         '%)')
+  ST_inc[17,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Daily or almost daily' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Daily or almost daily' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$alcohol_intake == 'Daily or almost daily',])*100,
+                         '%)')
+  #processed meat intake
+  ST_inc[19,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Never' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Never' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Never',])*100,
+                         '%)')
+  ST_inc[20,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Less than once a week' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Less than once a week' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Less than once a week',])*100,
+                         '%)')
+  ST_inc[21,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Once a week' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Once a week' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Once a week',])*100,
+                         '%)')
+  ST_inc[22,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == '2-4 times a week' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == '2-4 times a week' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == '2-4 times a week',])*100,
+                         '%)')
+  ST_inc[23,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == '5-6 times a week' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == '5-6 times a week' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == '5-6 times a week',])*100,
+                         '%)')
+  ST_inc[24,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Once or more daily' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Once or more daily' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$processed_meat_intake == 'Once or more daily',])*100,
+                         '%)')
+  #diabetes
+  ST_inc[26,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$diabetes == 'No' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$diabetes == 'No' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$diabetes == 'No',])*100,
+                         '%)')
+  ST_inc[27,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$diabetes == 'Yes' & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$diabetes == 'Yes' & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$diabetes == 'Yes',])*100,
+                         '%)')
+  #family history
+  ST_inc[29,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$fh == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$fh == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$fh == 0,])*100,
+                         '%)')
+  ST_inc[30,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$fh_mat == 0 & p_v[[i]]$fh_pat == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$fh_mat == 0 & p_v[[i]]$fh_pat == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$fh_mat == 0 & p_v[[i]]$fh_pat == 1,])*100,
+                         '%)')
+  ST_inc[31,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$fh_mat == 1 & p_v[[i]]$fh_pat == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$fh_mat == 1 & p_v[[i]]$fh_pat == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$fh_mat == 1 & p_v[[i]]$fh_pat == 0,])*100,
+                         '%)')
+  ST_inc[32,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$fh_mat == 1 & p_v[[i]]$fh_pat == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$fh_mat == 1 & p_v[[i]]$fh_pat == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$fh_mat == 1 & p_v[[i]]$fh_pat == 1,])*100,
+                         '%)')
+  #polygenic risk score quintile
+  ST_inc[34,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$grs_quintile == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$grs_quintile == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$grs_quintile == 1,])*100,
+                         '%)')
+  ST_inc[35,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$grs_quintile == 2 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$grs_quintile == 2 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$grs_quintile == 2,])*100,
+                         '%)')
+  ST_inc[36,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$grs_quintile == 3 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$grs_quintile == 3 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$grs_quintile == 3,])*100,
+                         '%)')
+  ST_inc[37,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$grs_quintile == 4 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$grs_quintile == 4 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$grs_quintile == 4,])*100,
+                         '%)')
+  ST_inc[39,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$grs_quintile == 5 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$grs_quintile == 5 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$grs_quintile == 5,])*100,
+                         '%)')
+  #symptom variables
+  #abdominal pain
+  ST_inc[41,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$other_weightloss == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$other_weightloss == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$other_weightloss == 1,])*100,
+                         '%)')
+  ST_inc[42,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$other_weightloss == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$other_weightloss == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$other_weightloss == 0,])*100,
+                         '%)')
+  #abdominal mass
+  ST_inc[44,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$abdo_mass == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$abdo_mass == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$abdo_mass == 1,])*100,
+                         '%)')
+  ST_inc[45,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$abdo_mass == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$abdo_mass == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$abdo_mass == 0,])*100,
+                         '%)')
+  #change bowel habit
+  ST_inc[47,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$change_bowel_habit == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$change_bowel_habit == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$change_bowel_habit == 1,])*100,
+                         '%)')
+  ST_inc[48,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$change_bowel_habit == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$change_bowel_habit == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$change_bowel_habit == 0,])*100,
+                         '%)')
+  #fob
+  ST_inc[50,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$fob == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$fob == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$fob == 1,])*100,
+                         '%)')
+  ST_inc[51,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$fob == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$fob == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$fob == 0,])*100,
+                         '%)')
+  #iron def
+  ST_inc[53,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$iron_def == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$iron_def == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$iron_def == 1,])*100,
+                         '%)')
+  ST_inc[54,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$iron_def == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$iron_def == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$iron_def == 0,])*100,
+                         '%)')
+  #low haemoglobin
+  ST_inc[56,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$haemoglobin == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$haemoglobin == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$haemoglobin == 1,])*100,
+                         '%)')
+  ST_inc[57,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$haemoglobin == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$haemoglobin == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$haemoglobin == 0,])*100,
+                         '%)')
+  #loss of appetite
+  ST_inc[59,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$loss_appetite == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$loss_appetite == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$loss_appetite == 1,])*100,
+                         '%)')
+  ST_inc[60,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$loss_appetite == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$loss_appetite == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$loss_appetite == 0,])*100,
+                         '%)')
+  #rectal bleeding
+  ST_inc[62,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$rectal_bloodloss == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$rectal_bloodloss == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$rectal_bloodloss == 1,])*100,
+                         '%)')
+  ST_inc[63,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$rectal_bloodloss == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$rectal_bloodloss == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$rectal_bloodloss == 0,])*100,
+                         '%)')
+  #weight loss
+  ST_inc[65,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$weightloss == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$weightloss == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$weightloss == 1,])*100,
+                         '%)')
+  ST_inc[66,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$weightloss == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$weightloss == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$weightloss == 0,])*100,
+                         '%)')
+  #unintentional
+  ST_inc[68,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$unintentional_weightloss == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$unintentional_weightloss == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$unintentional_weightloss == 1,])*100,
+                         '%)')
+  ST_inc[69,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$unintentional_weightloss == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$unintentional_weightloss == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$unintentional_weightloss == 0,])*100,
+                         '%)')
+  #other
+  ST_inc[71,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$other_weightloss == 1 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$other_weightloss == 1 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$other_weightloss == 1,])*100,
+                         '%)')
+  ST_inc[72,(i*2)] <- paste0(nrow(p_v[[i]][p_v[[i]]$other_weightloss == 0 & p_v[[i]]$case == 1,]),
+                         ' (',
+                         nrow(p_v[[i]][p_v[[i]]$other_weightloss == 0 & p_v[[i]]$case == 1,])/
+                           nrow(p_v[[i]][p_v[[i]]$other_weightloss == 0,])*100,
+                         '%)')
+  
+  #=======================
+  #N
+  ST_inc[2,((i*2)-1)] <- sum(p_v[[i]]$sex == 'Female', na.rm=T)
+  ST_inc[3,((i*2)-1)] <- sum(p_v[[i]]$sex == 'Male', na.rm=T)
+  print('F2 done')
+  
+  #ever smoked
+  ST_inc[5,((i*2)-1)] <- sum(p_v[[i]]$ever_smoked == 'No', na.rm=T)
+  ST_inc[6,((i*2)-1)] <- sum(p_v[[i]]$ever_smoked == 'Yes', na.rm=T)
+  
+  #smoking status
+  ST_inc[8,((i*2)-1)] <- sum(p_v[[i]]$smoking_status == 'Never', na.rm=T)
+  ST_inc[9,((i*2)-1)] <- sum(p_v[[i]]$smoking_status == 'Previous', na.rm=T)
+  ST_inc[10,((i*2)-1)] <- sum(p_v[[i]]$smoking_status == 'Current', na.rm=T)
+    
+  #alcohol intake
+  ST_inc[12,((i*2)-1)] <- sum(p_v[[i]]$alcohol_intake == 'Never', na.rm=T)
+  ST_inc[13,((i*2)-1)] <- sum(p_v[[i]]$alcohol_intake == 'Special occasions only', na.rm=T)
+  ST_inc[14,((i*2)-1)] <- sum(p_v[[i]]$alcohol_intake == 'One to three times a month', na.rm=T)
+  ST_inc[15,((i*2)-1)] <- sum(p_v[[i]]$alcohol_intake == 'Once or twice a week', na.rm=T)
+  ST_inc[16,((i*2)-1)] <- sum(p_v[[i]]$alcohol_intake == 'Three or four times a week', na.rm=T)
+  ST_inc[17,((i*2)-1)] <- sum(p_v[[i]]$alcohol_intake == 'Daily or almost daily', na.rm=T)
+
+  #processed meat intake
+  ST_inc[19,((i*2)-1)] <- sum(p_v[[i]]$processed_meat_intake == 'Never', na.rm=T)
+  ST_inc[20,((i*2)-1)] <- sum(p_v[[i]]$processed_meat_intake == 'Less than once a week', na.rm=T)
+  ST_inc[21,((i*2)-1)] <- sum(p_v[[i]]$processed_meat_intake == 'Once a week', na.rm=T)
+  ST_inc[22,((i*2)-1)] <- sum(p_v[[i]]$processed_meat_intake == '2-4 times a week', na.rm=T)
+  ST_inc[23,((i*2)-1)] <- sum(p_v[[i]]$processed_meat_intake == '5-6 times a week', na.rm=T)
+  ST_inc[24,((i*2)-1)] <- sum(p_v[[i]]$processed_meat_intake == 'Once or more daily', na.rm=T) 
+
+  #diabetes
+  ST_inc[26,((i*2)-1)] <- sum(p_v[[i]]$processed_meat_intake == 'No', na.rm=T) 
+  ST_inc[27,((i*2)-1)] <- sum(p_v[[i]]$processed_meat_intake == 'Yes', na.rm=T) 
+  
+  #family history
+  ST_inc[29,((i*2)-1)] <- sum(p_v[[i]]$fh == 0, na.rm=T) 
+  ST_inc[30,((i*2)-1)] <- sum(p_v[[i]]$fh_mat == 0 & p_v[[i]]$fh_pat == 1, na.rm=T) 
+  ST_inc[31,((i*2)-1)] <- sum(p_v[[i]]$fh_mat == 1 & p_v[[i]]$fh_pat == 0, na.rm=T)
+  ST_inc[32,((i*2)-1)] <- sum(p_v[[i]]$fh_mat == 1 & p_v[[i]]$fh_pat == 1, na.rm=T)
+    
+  #polygenic risk score quintile
+  ST_inc[34,((i*2)-1)] <- sum(p_v[[i]]$grs_quintile == 1, na.rm=T) 
+  ST_inc[35,((i*2)-1)] <- sum(p_v[[i]]$grs_quintile == 2, na.rm=T) 
+  ST_inc[36,((i*2)-1)] <- sum(p_v[[i]]$grs_quintile == 3, na.rm=T) 
+  ST_inc[37,((i*2)-1)] <- sum(p_v[[i]]$grs_quintile == 4, na.rm=T) 
+  ST_inc[38,((i*2)-1)] <- sum(p_v[[i]]$grs_quintile == 5, na.rm=T) 
+  
+  #symptom variables
+  #abdominal pain
+  ST_inc[40,((i*2)-1)] <- sum(p_v[[i]]$abdo_pain == 1, na.rm=T) 
+  ST_inc[41,((i*2)-1)] <- sum(p_v[[i]]$abdo_pain == 0, na.rm=T) 
+
+  #abdominal mass
+  ST_inc[43,((i*2)-1)] <- sum(p_v[[i]]$abdo_mass == 1, na.rm=T) 
+  ST_inc[44,((i*2)-1)] <- sum(p_v[[i]]$abdo_mass == 0, na.rm=T) 
+  
+  #change bowel habit
+  ST_inc[46,((i*2)-1)] <- sum(p_v[[i]]$change_bowel_habit == 1, na.rm=T)
+  ST_inc[47,((i*2)-1)] <- sum(p_v[[i]]$change_bowel_habit == 0, na.rm=T) 
+
+  #fob
+  ST_inc[49,((i*2)-1)] <- sum(p_v[[i]]$fob == 1, na.rm=T)
+  ST_inc[50,((i*2)-1)] <- sum(p_v[[i]]$fob == 0, na.rm=T) 
+
+  #iron def
+  ST_inc[52,((i*2)-1)] <- sum(p_v[[i]]$iron_def == 1, na.rm=T)
+  ST_inc[53,((i*2)-1)] <- sum(p_v[[i]]$iron_def == 0, na.rm=T) 
+  
+  #low haemoglobin
+  ST_inc[55,((i*2)-1)] <- sum(p_v[[i]]$haemoglobin == 1, na.rm=T)
+  ST_inc[56,((i*2)-1)] <- sum(p_v[[i]]$haemoglobin == 0, na.rm=T) 
+  
+  #loss of appetite
+  ST_inc[58,((i*2)-1)] <- sum(p_v[[i]]$loss_appetite == 1, na.rm=T) 
+  ST_inc[59,((i*2)-1)] <- sum(p_v[[i]]$loss_appetite == 0, na.rm=T)
+  
+  #rectal bleeding
+  ST_inc[61,((i*2)-1)] <- sum(p_v[[i]]$rectal_bloodloss == 1, na.rm=T) 
+  ST_inc[62,((i*2)-1)] <- sum(p_v[[i]]$rectal_bloodloss == 0, na.rm=T) 
+
+  #weight loss
+  ST_inc[64,((i*2)-1)] <- sum(p_v[[i]]$weightloss == 1, na.rm=T) 
+  ST_inc[65,((i*2)-1)] <- sum(p_v[[i]]$weightloss == 0, na.rm=T) 
+  
+  #unintentional
+  ST_inc[67,((i*2)-1)] <- sum(p_v[[i]]$unintentional_weightloss == 1, na.rm=T) 
+  ST_inc[68,((i*2)-1)] <- sum(p_v[[i]]$unintentional_weightloss == 0, na.rm=T) 
+  
+  #other
+  ST_inc[70,((i*2)-1)] <- sum(p_v[[i]]$other_weightloss == 1, na.rm=T) 
+  ST_inc[71,((i*2)-1)] <- sum(p_v[[i]]$other_weightloss == 0, na.rm=T) 
+  
+}
