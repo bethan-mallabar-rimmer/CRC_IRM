@@ -11,7 +11,7 @@ library(devtools)
 #===
 #install some required packages with devtools:
 source_url("https://raw.githubusercontent.com/hdg204/UKBB/main/UKBB_Health_Records_Public.R")
-source_url("https://raw.githubusercontent.com/ID690016874/HPDM042/main/find-read-codes/find_read_codes.R") 
+source_url("https://raw.githubusercontent.com/bethan-mallabar-rimmer/CRC_IRM/main/find_read_codes/find_read_codes.R") 
 
 #get read 2/3 codes and descriptions for CRC
 lkp2 <- read.csv('read2_lkp.csv') # download read 2 lookup table
