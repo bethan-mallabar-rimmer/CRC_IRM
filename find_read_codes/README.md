@@ -2,14 +2,13 @@
 Search UK Biobank clinical read 2/3 code lookup tables for codes beginning with a character or character vector input by the user. Return codes and descriptions. Not fully bug tested so please let me know of any issues.
 
 
-<h2>Requirements:</h2> <h3>Upload files read2_lkp.csv and read3_lkp.csv to working environment prior to running function.</h3>
+<h2>Requirements:</h2> <h3>Upload files read2_lkp.csv and read3_lkp.csv (available upon request from the authors) to working environment prior to running function.</h3>
 <b>read2_lkp.csv:</b></p>
 Headers are read_2, term_code, term_description, orig_read_code</p>
 Some of the entries in term_description include a comma, so have been inadvertantly split between term_description and orig_read_code because this is a CSV. The function fixes this.</p>
 <b>read3_lkp.csv:</b></p>
 Headers are read_3, term_description, description_type, status, old_readcode</p>
 Some of the entries in term_description include a comma, so have been inadvertantly split between term_description and description_type because this is a CSV. The function fixes this.</p>
-_Files available upon request to the authors_
 
 <h2>Inputs:</h2> <h3>find_read_codes(codes, file1 = 'read2_lkp.csv', file2 = 'read3_lkp.csv', loop_limit = 3)</h3>
 <b>codes</b> - A character or character vector containing the read2/3 codes to search for in the lookup tables. Codes can be no longer than 5 characters each (or, if you input codes longer than 5 characters, they will be cropped). The function also finds read codes which start with codes input by the user. So codes = c('B13', 'B575', 'X902z') would find read 2 and 3 codes starting with B13 and B575, and matching X902z.</p>
