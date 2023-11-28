@@ -418,3 +418,8 @@ for (i in 1:15) {
   ST_inc[71,((i*2)-1)] <- sum(p_v[[i]]$other_weightloss == 0, na.rm=T) 
   
 }
+
+rownames(ST_inc) <- aaa
+colnames(ST_inc) <- rep(names(p_v),each=2)
+
+write.csv(ST_inc, "ST_5.csv", row.names=T)
