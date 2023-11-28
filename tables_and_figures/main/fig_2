@@ -37,7 +37,7 @@ rocauc_plot_40 <- ggplot(data=rocauc_frame_40, aes(x=var, y=aucs, ymin=LB, ymax=
   geom_point(colour = 'black', size=1) + geom_line(linetype = "dashed") + geom_errorbar(width=0.1) +
   HGtheme + xlab("Variables added to integrated risk model") + ylab("ROCAUC") +
   scale_x_continuous(breaks=0:8, labels=c("none","age at\nfirst symptom", "& abdominal\npain",
-                                          "& PRS","& sex","& smoking\nstatus","& rectal\nbloodloss",
+                                          "& PRS","& sex","& ever\nsmoked","& rectal\nbloodloss",
                                           "& waist\ncircumference",
                                           "& change \nin bowel \nhabits")) +
   scale_y_continuous(breaks=seq(0.5,0.85,by=0.02)) + theme(plot.margin = unit(c(5.5, 5.5, 5.5, 5.5), "points"),
