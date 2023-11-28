@@ -1,3 +1,9 @@
+#required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
+#p_v from Section 6
+
+#incidence of CRC by categorical variable
+#=========================================
+
 aaa <- c('sex','female','male','ever smoked','no','yes',
          'smoking status','never','previous','current',
          'alcohol intake','never','special occasions only',
