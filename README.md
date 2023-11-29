@@ -14,16 +14,12 @@ Contents:
   6. Generate the polygenic risk score for all participants and work out quintiles
   7. Logistic regression analysis
   8. Calculate ROCAUC of each variable and build integrated risk model iteratively based on ROCAUC values
-  9. Compare all possible integrated risk models with AIC
+  9. Compare all possible integrated risk models with AIC</p>
 
-The **find_read_codes** folder contains an R function which takes read codes as input and returns similar read codes.
+Abbreviations: AIC, Akaike information criterion, CRC = colorectal cancer, GP = general practice, ROCAUC = receiver operating characteristic area under the curve</p>
 
-**CRC_symptom_read_codes** contains the list of 235 read codes for CRC symptoms which were used to include participants in this study.
+The **find_read_codes** folder contains an R function which takes read codes as input and returns similar read codes.</p>
 
-**CRC_read_codes** contains the list of 59 read codes used to identify cases of CRC in participants' GP records.
+**CRC_read_codes** contains some of the 235 Read codes for CRC symptoms which were used to include participants in this study (others are available upon request - see folder readme file), and the list of 59 Read codes used to identify cases of CRC in participants' GP records.</p>
 
-**tables_and_figures** contains code used to generate all tables and figures (including supplementary)
-
-
-
-Abbreviations: AIC, Akaike information criterion, CRC = colorectal cancer, GP = general practice, ROCAUC = receiver operating characteristic area under the curve
+**tables_and_figures** contains code used to generate all tables and figures (including supplementary).
