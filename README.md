@@ -1,5 +1,5 @@
-# This repository is under construction. Files and pipleine will be uploaded here before submission to MedRxiv.
-In the meantime, a draft version of the repository can be found at: https://github.com/ID690016874/HPDM042
+# This repository contains files and pipeline for 'Colorectal cancer risk stratification using a polygenic risk score in symptomatic patients presenting to primary care – a UK Biobank retrospective cohort study'.
+MedRXiv link: [insert]
 
 **analysis.R** contains all the code used for the analysis. It mostly runs on R version 4.1.1.
 
