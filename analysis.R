@@ -893,6 +893,116 @@ p_40_vamr <- filter(p_40_v, eid %in% amr$n_eid)
 sum(p_40_vamr$case == 1) #AMR: 0 controls or cases
 sum(p_40_vamr$case == 0)
 
+#6. Generate polygenic risk score (PRS) (in this code the nomenclature used was genetic risk score (GRS))
+#====================================
+#generate GRS for all UKBB participants using source_url("https://raw.githubusercontent.com/hdg204/Rdna-nexus/main/install.R")
+#note this requires a tab-separated table of risk-associated variants, with the following columns: chr, bp, other, effect, weight
+#(other and effect refer to the alleles which do or don't impact CRC risk, weight is the beta)
+grs <- generate_grs('00_GRS_snp_list.tsv')
+
+#some of these SNPs have a bp location ending in 000000000 which is most likely not accurate
+#so try and replace the bp location based on the rsIDs:
+bp <- grs$report$bp[grs$report$included == "MISSING"][-19]
+rsids <- c('rs5028523','rs12137232','rs12078075',
+           'rs2078095','rs497916','rs7299936',
+           'rs1078563','rs4668039','rs2388976',
+           'rs10006803','rs1426947','rs472959',
+           'rs145997965','rs6911915','rs151127921',
+           'rs10978941','rs7038489','rs11789898')
+#The following commented code was run in terminal not from this script:
+#grep 'rs5028523' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c1_b0_v3.mfi.txt
+#grep 'rs12137232' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c1_b0_v3.mfi.txt
+#grep 'rs12078075' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c1_b0_v3.mfi.txt
+#grep 'rs2078095' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c1_b0_v3.mfi.txt
+#grep 'rs497916' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c11_b0_v3.mfi.txt
+#grep 'rs7299936' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c12_b0_v3.mfi.txt
+#grep 'rs1078563' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c13_b0_v3.mfi.txt
+#grep 'rs4668039' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c2_b0_v3.mfi.txt
+#grep 'rs2388976' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c4_b0_v3.mfi.txt
+#grep 'rs10006803' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c4_b0_v3.mfi.txt
+#grep 'rs1426947' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c4_b0_v3.mfi.txt
+#grep 'rs472959' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c5_b0_v3.mfi.txt
+#grep 'rs145997965' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c6_b0_v3.mfi.txt
+#grep 'rs6911915' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c6_b0_v3.mfi.txt
+#grep 'rs151127921' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c6_b0_v3.mfi.txt
+#grep 'rs10978941' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c9_b0_v3.mfi.txt
+#grep 'rs7038489' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c9_b0_v3.mfi.txt
+#grep 'rs11789898' ../../../mnt/project/Bulk/Imputation/UKB\ imputation\ from\ genotype/ukb22828_c9_b0_v3.mfi.txt
+chr <- c('1','1','1','1','11','12','13','2','4','4','4','5','6','6','6','9','9','9')
+new_bps <- c(172864224,201885446,205163798,240408346,118758089,115934000,110352851,169025379,115502406,151501208,
+             175420523,172324558,106482613,117809031,133993925,110373819,136682468,136925663)
+bps <- data.frame(bp = bp, new_bps = new_bps, rsids=rsids, chr=chr)
+snps <- read.csv('00_GRS_snp_list.tsv',sep='')
+snps2 <- left_join(snps,bps,by=c('bp','chr'))
+snps2 <- snps2[-22,]
+snps2 <- snps2[-146,]
+snps3 <- snps2
+snps3$bp[!is.na(snps3$new_bps)] <- snps3$new_bps[!is.na(snps3$new_bps)]
+snps3 <- snps3[,1:5]
+#now export amended sheet to csv (I then converted this to .tsv in Excel)
+write.csv(snps3, file='snps_amended.csv', row.names = FALSE)
+
+#generate a GRS, which outputs quality of imputation for each SNP:
+grs <- generate_grs('snps_amended.tsv')
+
+#one of the loci included in the GRS is duplicated, so exclude that one:
+grs$report$bp[duplicated(grs$report$bp)]
+which(grs$report$bp == '136682468') #94 95
+grs_info <- as.data.frame(grs$report$info[-95])
+grs_info$rsid <- grs$dosage$variants$rsid
+colnames(grs_info)[1] <- 'infoscore'
+grs_info$rsid[grs_info$infoscore >= 0.9] <- ''
+grs_info$index <- 1:nrow(grs_info)
+
+#plot quality of SNP imputations:
+  infoscore <- ggplot(data = grs_info, aes(y=infoscore, x=index)) + geom_point(size=0.6) + 
+  geom_text(aes(label=rsid), hjust=-0.1, size=3) + HGtheme + geom_hline(yintercept=0.9, linetype='dashed') +
+  xlab('Variant number') + ylab('Info score')  +
+  theme(plot.title = element_text(size=9, family = 'Helvetica'),
+        axis.title = element_text(family = 'Helvetica'),
+        axis.text = element_text(size=9, family = 'Helvetica')) +
+  scale_x_continuous(breaks=c(1,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200)) + 
+  scale_y_continuous(breaks=c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0), limits=c(0.4,1.0)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+#the following imputed variants have info score <0.9 so we will exclude from the GRS:
+grs_info$rsid[grs_info$rsid != ''] #"rs201395236" "rs7038489"   "rs77969132"
+#note there were two variants with rsid rs7038489, so removing the above meant removing 4 variants from the GRS
+#At this point I manually removed these from the .tsv table in Excel then recalculated the GRS using the new .tsv table:
+grs_qc <- generate_grs('snps_amended_QC.tsv')
+plot(grs_qc$report$info) #all info scores are >0.9 as expected
+
+#copy whole cohort dataframe and add GRS
+p_grs <- filter(grs_qc$grs, eid %in% p_40_ve$eid)
+p_40_ve <- left_join(p_40_ve, p_grs)
+
+#get mean and standard deviation of GRS
+gm <- mean(p_40_ve$grs, na.rm = T)
+gsd <- sd(p_40_ve$grs, na.rm = T)
+
+#add GRS and other related measures to cohort and subcohorts:
+add_grs <- function(p_xx_v) {
+  #add GRS to participants dataframe
+  p_grs <- filter(grs_qc$grs, eid %in% p_xx_v$eid)
+  p <- left_join(p_xx_v, p_grs)
+  
+  #calculate z score (like GRS but scaled, so 1 unit increase = 1 standard deviation increase):
+  p$zscore <- (p$grs - gm)/gsd
+  
+  #divide GRS into quintiles:
+  scorequin <- quantile(p$grs, probs = seq(0, 1, 1/5), na.rm = T)
+  p <- p %>% mutate(grs_quintile=NA)
+  p$grs_quintile[p$grs<scorequin[2]] <- 1
+  p$grs_quintile[p$grs<scorequin[3] & p$grs>scorequin[2]] <- 2
+  p$grs_quintile[p$grs<scorequin[4] & p$grs>scorequin[3]] <- 3
+  p$grs_quintile[p$grs<scorequin[5] & p$grs>scorequin[4]] <- 4
+  p$grs_quintile[p$grs>scorequin[5]] <- 5
+  
+  return(p)
+}
+
+p_40_ve <- add_grs(p_40_ve)
+                            
 #6A. Generate polygenic risk score (PRS) (in this code the nomenclature used was genetic risk score (GRS))
 #====================================
 #generate GRS for all UKBB participants using source_url("https://raw.githubusercontent.com/hdg204/Rdna-nexus/main/install.R")
