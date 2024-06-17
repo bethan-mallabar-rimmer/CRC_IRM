@@ -519,6 +519,73 @@ density50 <- p_50 %>% ggplot() +
 
 #going with age threshold 40 because it increases case to control ratio without excluding too many participants
 
+#4A. exclude participants with pathogenic variants in Lynch syndrome genes
+#=====================================================================
+#genes are MLH1, MSH2 and MSH6
+#import tables of participants with pathogenic variants (for a list of UKBB participants with pathogenic variants
+#in the above genes, please contact authors of 'Influence of family history on penetrance of hereditary cancers
+#in a population setting', Jackson et al., eClinicalMedicine 2023
+l_mlh1 <- read.csv('0_MLH1_clin_inds.txt',sep = "",header = F)
+l_msh2 <- read.csv('0_MSH2_clin_inds.txt',sep = "",header = F)
+l_msh6 <- read.csv('0_MSH6_clin_inds.txt',sep = "",header = F)
+
+#calculate the number of participants in our cohort with pathogenic Lynch syndrome variants:
+sum(p_40$eid %in% l_mlh1$V1) #14
+length(p_40$eid[p_40$eid %in% l_mlh1$V1 & p_40$case == '1']) #2 cases
+length(p_40$eid[p_40$eid %in% l_mlh1$V1 & p_40$case == '0']) #9 controls
+sum(p_40$eid %in% l_msh2$V1) #16
+length(p_40$eid[p_40$eid %in% l_msh2$V1 & p_40$case == '1']) #2 cases
+length(p_40$eid[p_40$eid %in% l_msh2$V1 & p_40$case == '0']) #11 controls
+sum(p_40$eid %in% l_msh6$V1) #68
+length(p_40$eid[p_40$eid %in% l_msh6$V1 & p_40$case == '1']) #0 cases
+length(p_40$eid[p_40$eid %in% l_msh6$V1 & p_40$case == '0']) #63 controls
+#calculate how many participants are expected to be left in the cohort, after excluding thsoe with pathogenic Lynch syndrome variants:
+nrow(p_40) - (14 + 16 + 68) #67750
+
+#exclude the participants:
+p_40 <- p_40[!(p_40$eid %in% l_mlh1$V1) & 
+                   !(p_40$eid %in% l_msh2$V1) &
+                   !(p_40$eid %in% l_msh6$V1),]
+nrow(p_40) #cohort N = 67750 - as expected - i.e. no participants had variants in more than one Lynch syndrome gene
+
+#exclude participants diagnosed with other hereditary conditions causing CRC
+#==========================================================================
+#e.g. familial adenomatous polyposis, Gardner syndrome, Turcot syndrome,
+#hereditary flat adenoma syndrome, hereditary nonpolyposis CRC, the
+#hamartomatous polyposis syndromes, and hereditary mixed polyposis syndrome
+
+#diagnoses were identified solely using Read codes in primary care records because:
+#1. identifying pathogenic variants for the above conditions and excluding participants based
+#on genetics is outside the scope of this study
+#2. ICD-10 codes which include the above conditions (D13.9 and D12.6) are not specific enough,
+#and also include other conditions such as any benign neoplasm of the digestive system.
+
+#change column names of the lookup tables of Read 2 and 3 codes (section 1 of this analysis), so
+#the tables can be joined with dplyr:
+colnames(lkp2)[1] <- "read_code"
+colnames(lkp3)[1] <- "read_code"
+
+#search Read 3 lookup table for any of the conditions listed above:
+crc_h <- lkp3[grepl('(familial\\sadenomatous\\spolyposis)|(familial\\spolyposis)|(adenomatous\\spolyposis\\scoli)|(hereditary\\sadenomatous\\spolyposis)|(hereditary\\spolyposis)|(polyposis\\ssyndrome)|(familial\\sflat\\sadenoma)|(hereditary\\sflat\\sadenoma)|(flat\\sadenoma\\ssyndrome)|(Gardner)|(Turcot)|(hereditary\\snonpolyposis)|(familial\\snonpolyposis)|(familial\\shamartomatous\\spolyposis)|(hereditary\\shamartomatous\\spolyposis)|(hamartomatous\\spolyposis\\ssyndrome)|(PTEN-hamartoma)|(PTEN\\shamartoma)|(juvenile\\spolyposis\\ssyndrome)|(familial\\sjuvenile\\spolyposis)|(hereditary\\sjuvenile\\spolyposis)|(Cowden)|(Bannayan-Riley-Ruvalcaba)|(Peutz-Jeghers)|(hereditary\\smixed\\spolyposis)|(familial\\smixed\\spolyposis)|(mixed\\spolyposis\\ssyndrome)',
+                    lkp3$term_description,ignore.case=TRUE),]
+#remove any Read 3 search results which do NOT refer to hereditary CRC syndromes (Gardnerella, Gardner-Diamond, and Adenocarcinoma in adenomatous polyposis coli)
+crc_h <- crc_h[-(grep('(Gardnerella)|(Gardner-Diamond)|(Adenocarcinoma\\sin\\sadenomatous\\spolyposis\\scoli)',crc_h$term_description,ignore.case = TRUE)),]
+#add any Read codes where the description is in the format 'See [different Read code]'
+for (i in 1:nrow(crc_h)) {crc_h <- rbind.data.frame(crc_h, lkp3[grep(crc_h$read_code[i], lkp3$term_description),])}
+#search Read 2 lookup table and join results together:
+crc_h <- full_join(crc_h, lkp2[grepl('(familial\\sadenomatous\\spolyposis)|(familial\\spolyposis)|(adenomatous\\spolyposis\\scoli)|(hereditary\\sadenomatous\\spolyposis)|(hereditary\\spolyposis)|(polyposis\\ssyndrome)|(familial\\sflat\\sadenoma)|(hereditary\\sflat\\sadenoma)|(flat\\sadenoma\\ssyndrome)|(Gardner)|(Turcot)|(hereditary\\snonpolyposis)|(familial\\snonpolyposis)|(familial\\shamartomatous\\spolyposis)|(hereditary\\shamartomatous\\spolyposis)|(hamartomatous\\spolyposis\\ssyndrome)|(PTEN-hamartoma)|(PTEN\\shamartoma)|(juvenile\\spolyposis\\ssyndrome)|(familial\\sjuvenile\\spolyposis)|(hereditary\\sjuvenile\\spolyposis)|(Cowden)|(Bannayan-Riley-Ruvalcaba)|(Peutz-Jeghers)|(hereditary\\smixed\\spolyposis)|(familial\\smixed\\spolyposis)|(mixed\\spolyposis\\ssyndrome)',lkp2$term_description,ignore.case=TRUE),], by='read_code')
+#remove any Read 2 search results which do NOT refer to hereditary CRC syndromes:
+crc_h <- crc_h[-(grep('(Gardnerella)|(Gardner-Diamond)|(Adenocarcinoma\\sin\\sadenomatous\\spolyposis\\scoli)',crc_h$term_description.y,ignore.case = TRUE)),]
+
+#find participants with diagnoses of hereditary CRC syndromes:
+crc_h_eid <- read_GP(unique(crc_h$read_code))
+length(p_40$eid[p_40$eid %in% crc_h_eid$eid]) #33 people have a CRC causing syndrome (primary care records only). This includes:
+sum(as.integer(p_40$case[p_40$eid %in% crc_h_eid$eid]), na.rm=TRUE) #2 cases
+nrow(p_40[(p_40$eid %in% crc_h_eid$eid) & (p_40$case == '0'),]) #29 controls
+
+#remove participants diagnosed with hereditary CRC syndromes from cohort:
+p_40 <- p_40[!(p_40$eid %in% crc_h_eid$eid),]
+
 #4A. exclude participants who are neither cases nor controls (i.e. don't meet study inclusion criteria)
 #=================================================================================================
 #p_00_v <- p_00 %>% filter(!(case == 'exclude'))
