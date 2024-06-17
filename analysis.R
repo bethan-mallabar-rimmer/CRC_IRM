@@ -14,7 +14,7 @@ source_url("https://raw.githubusercontent.com/hdg204/Rdna-nexus/main/install.R")
 #import DISCO read codes for CRC symptoms, and lookup tables for all read codes
 lkp2 <- read.csv('read2_lkp.csv') # download read 2 lookup table
 lkp3 <- read.csv('read3_lkp.csv') # download read 3 lookup table
-disco <- read.csv('00_DISCO_crc_symptoms.csv') # download CRC symptom read codes from DISCO
+disco <- read.csv('00_DISCO_crc_symptoms.csv') # download CRC symptom read codes from DISCO (please contact the DISCO consortium University of Exeter for this file)
 
 #reformat DISCO read codes to 5 characters, same as UKBB read code format:
 #-------------------------------------------------------------------------
@@ -24,6 +24,9 @@ for (i in 1:nrow(disco)) {
 }
 #check how many unique DISCO read codes there are now they've been cut to 5 characters
 length(unique(disco$readcode)) #=168
+
+#remove 'faecal occult blood test abnormal' (due to low numbers of UKBB participants having this symptom at the primary care stage)
+disco <- disco[,-(colnames(disco) == 'fob')]
 
 #find read codes in the lookup table which match or start with the DISCO read codes:
 #-----------------------------------------------------------------------------------
@@ -70,6 +73,15 @@ ucl_codes_rb_filtered <- ucl_codes_rb[!(ucl_codes_rb$code %in% c('XaPpf','XaJYy'
 sym_codes_filtered <- full_join(sym_codes_filtered, ucl_codes_rb_filtered[,c(1,3:4)])
 #remove duplicates
 sym_codes_filtered <- sym_codes_filtered[!duplicated(sym_codes_filtered$code),]
+
+#remove any codes describing faecal occult blood test - these will be used for a separate variable later
+#------------------------------------------------------
+fob_positive <- c('4794.','4793.','4796.','686B.','XaNxT','XaPke')
+fob_negative <- c('4792.','4795.','XaNxS')
+fob_requested <- c('479..','4791.','479Z.')
+
+sym_codes_filtered <- sym_codes_filtered[!sym_codes_filtered$code %in% c(fob_requested, fob_negative, fob_positive),]
+#230 symptoms
 
 #1B. count the number of read codes per each type of symptom:
 #============================================================
