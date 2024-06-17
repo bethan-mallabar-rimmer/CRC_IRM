@@ -1003,45 +1003,149 @@ add_grs <- function(p_xx_v) {
 
 p_40_ve <- add_grs(p_40_ve)
                             
-#6A. Generate polygenic risk score (PRS) (in this code the nomenclature used was genetic risk score (GRS))
-#====================================
-#generate GRS for all UKBB participants using source_url("https://raw.githubusercontent.com/hdg204/Rdna-nexus/main/install.R")
-#note this requires a tab-separated table of risk-associated variants, with the following columns: chr, bp, other, effect, weight
-#(effect and other refer to the alleles which do or don't impact CRC risk, weight is the beta)
-grs <- generate_grs('00_GRS_snplist.tsv')
+#7A. Split cohort 80:20 for validation
+#======================================
+#add age grouping variable to cohort p_40_ve
+p_40_ve$age_group <- rep(NA, nrow(p_40_ve))
+p_40_ve$age_group[p_40_ve$sym_age < 50] <- '40-49'
+p_40_ve$age_group[p_40_ve$sym_age >= 50 & p_40_ve$sym_age < 60] <- '50-59'
+p_40_ve$age_group[p_40_ve$sym_age >= 60 & p_40_ve$sym_age < 70] <- '60-69'
+p_40_ve$age_group[p_40_ve$sym_age >= 70 & p_40_ve$sym_age < 80] <- '70-79'
 
-#copy whole cohort dataframe and add GRS
-p_grs <- filter(grs$grs, eid %in% p_v$p_40_ve$eid)
-p_40_v <- left_join(p_v$p_40_ve, p_grs)
+#sample a random 80% of p_40_ve, preserving representation of cases, ages, and sexes
+set.seed(1924) #seed came from a random number generator
+p_40_ve_train <- p_40_ve %>%
+  group_by(case, age_group, sex) %>%
+  slice_sample(prop=.8)
+#get the other 20% of p_40_ve
+p_40_ve_test <- anti_join(p_40_ve, p_40_ve_train)
 
-#get mean and standard deviation of PRS
-gm <- mean(p_40_v$grs, na.rm = T)
-gsd <- sd(p_40_v$grs, na.rm = T)
+#7B. Split training (80%), testing (20%) and overall (100%) cohorts by age and sex
+#=================================================================================
+#age
+p_4049_ve_train <- filter(p_40_ve_train, sym_age >= 40 & sym_age <50)
+sum(p_4049_ve_train$case == 1) #33 cases
+p_5059_ve_train <- filter(p_40_ve_train, sym_age >= 50 & sym_age <60)
+sum(p_5059_ve_train$case == 1) #130 cases
+p_6069_ve_train <- filter(p_40_ve_train, sym_age >= 60 & sym_age <70)
+sum(p_6069_ve_train$case == 1) #154 cases
+p_7079_ve_train <- filter(p_40_ve_train, sym_age >= 70)
+sum(p_7079_ve_train$case == 1) #30 cases
 
-#add GRS and other related measures to cohort and subcohorts:
-add_grs <- function(p_xx_v) {
-  #add GRS to participants dataframe
-  p_grs <- filter(grs$grs, eid %in% p_xx_v$eid)
-  p <- left_join(p_xx_v, p_grs)
-  
-  #calculate z score (like GRS but scaled, so 1 unit increase = 1 standard deviation increase):
-  p$zscore <- (p$grs - gm)/gsd
-  
-  #divide GRS into quintiles:
-  scorequin <- quantile(p$grs, probs = seq(0, 1, 1/5), na.rm = T)
-  p <- p %>% mutate(grs_quintile=NA)
-  p$grs_quintile[p$grs<scorequin[2]] <- 1
-  p$grs_quintile[p$grs<scorequin[3] & p$grs>scorequin[2]] <- 2
-  p$grs_quintile[p$grs<scorequin[4] & p$grs>scorequin[3]] <- 3
-  p$grs_quintile[p$grs<scorequin[5] & p$grs>scorequin[4]] <- 4
-  p$grs_quintile[p$grs>scorequin[5]] <- 5
-  
-  return(p)
-}
+p_4049_ve_test <- filter(p_40_ve_test, sym_age >= 40 & sym_age <50)
+sum(p_4049_ve_test$case == 1) #10 cases
+p_5059_ve_test <- filter(p_40_ve_test, sym_age >= 50 & sym_age <60)
+sum(p_5059_ve_test$case == 1) #33 cases
+p_6069_ve_test <- filter(p_40_ve_test, sym_age >= 60 & sym_age <70)
+sum(p_6069_ve_test$case == 1) #39
+p_7079_ve_test <- filter(p_40_ve_test, sym_age >= 70)
+sum(p_7079_ve_test$case == 1) #9
 
-p_v <- lapply(p_v, function(x) add_grs(x))
+p_4049_ve <- filter(p_40_ve, sym_age >= 40 & sym_age <50)
+sum(p_4049_ve$case == 1) #43 cases
+p_5059_ve <- filter(p_40_ve, sym_age >= 50 & sym_age <60)
+sum(p_5059_ve$case == 1) #163 cases
+p_6069_ve <- filter(p_40_ve, sym_age >= 60 & sym_age <70)
+sum(p_6069_ve$case == 1) #193 cases 
+p_7079_ve <- filter(p_40_ve, sym_age >= 70)
+sum(p_7079_ve$case == 1) #39 cases
 
-#now check GRS distribution across age groups - it should be the same because GRS
+#sex
+p_40f_ve_train <- filter(p_40_ve_train, sex == "Female")
+sum(p_40f_ve_train$case == 1) #151
+p_40m_ve_train <- filter(p_40_ve_train, sex == "Male")
+sum(p_40m_ve_train$case == 1) #196
+
+p_40f_ve_test <- filter(p_40_ve_test, sex == "Female")
+sum(p_40f_ve_test$case == 1) #40
+p_40m_ve_test <- filter(p_40_ve_test, sex == "Male")
+sum(p_40m_ve_test$case == 1) #51
+
+p_40f_ve <- filter(p_40_ve, sex == "Female")
+sum(p_40f_ve$case == 1) #191
+p_40m_ve <- filter(p_40_ve, sex == "Male")
+sum(p_40m_ve$case == 1) #247
+
+#age and sex
+p_4049f_ve_train <- filter(p_4049_ve_train, sex == "Female")
+sum(p_4049f_ve_train$case == 1) #20
+p_4049m_ve_train <- filter(p_4049_ve_train, sex == "Male")
+sum(p_4049m_ve_train$case == 1) #13
+p_5059f_ve_train <- filter(p_5059_ve_train, sex == "Female")
+sum(p_5059f_ve_train$case == 1) #62
+p_5059m_ve_train <- filter(p_5059_ve_train, sex == "Male")
+sum(p_5059m_ve_train$case == 1) #68
+p_6069f_ve_train <- filter(p_6069_ve_train, sex == "Female")
+sum(p_6069f_ve_train$case == 1) #59
+p_6069m_ve_train <- filter(p_6069_ve_train, sex == "Male")
+sum(p_6069m_ve_train$case == 1) #95
+p_7079f_ve_train <- filter(p_7079_ve_train, sex == "Female")
+sum(p_7079f_ve_train$case == 1) #10
+p_7079m_ve_train <- filter(p_7079_ve_train, sex == "Male")
+sum(p_7079m_ve_train$case == 1) #20
+
+p_4049f_ve_test <- filter(p_4049_ve_test, sex == "Female")
+sum(p_4049f_ve_test$case == 1) #6
+p_4049m_ve_test <- filter(p_4049_ve_test, sex == "Male")
+sum(p_4049m_ve_test$case == 1) #4
+p_5059f_ve_test <- filter(p_5059_ve_test, sex == "Female")
+sum(p_5059f_ve_test$case == 1) #16
+p_5059m_ve_test <- filter(p_5059_ve_test, sex == "Male")
+sum(p_5059m_ve_test$case == 1) #17
+p_6069f_ve_test <- filter(p_6069_ve_test, sex == "Female")
+sum(p_6069f_ve_test$case == 1) #15
+p_6069m_ve_test <- filter(p_6069_ve_test, sex == "Male")
+sum(p_6069m_ve_test$case == 1) #24
+p_7079f_ve_test <- filter(p_7079_ve_test, sex == "Female")
+sum(p_7079f_ve_test$case == 1) #3
+p_7079m_ve_test <- filter(p_7079_ve_test, sex == "Male")
+sum(p_7079m_ve_test$case == 1) #6
+
+p_4049f_ve <- filter(p_4049_ve, sex == "Female")
+sum(p_4049f_ve$case == 1) #26
+p_4049m_ve <- filter(p_4049_ve, sex == "Male")
+sum(p_4049m_ve$case == 1) #17
+p_5059f_ve <- filter(p_5059_ve, sex == "Female")
+sum(p_5059f_ve$case == 1) #78
+p_5059m_ve <- filter(p_5059_ve, sex == "Male")
+sum(p_5059m_ve$case == 1) #85
+p_6069f_ve <- filter(p_6069_ve, sex == "Female")
+sum(p_6069f_ve$case == 1) #74
+p_6069m_ve <- filter(p_6069_ve, sex == "Male")
+sum(p_6069m_ve$case == 1) #119
+p_7079f_ve <- filter(p_7079_ve, sex == "Female")
+sum(p_7079f_ve$case == 1) #13
+p_7079m_ve <- filter(p_7079_ve, sex == "Male")
+sum(p_7079m_ve$case == 1) #26
+
+#put all data frames in a list
+#=============================
+p_v_train <- list(p_40_ve_train, p_4049_ve_train, p_5059_ve_train, p_6069_ve_train, p_7079_ve_train,
+                  p_40f_ve_train, p_40m_ve_train,
+                  p_4049f_ve_train, p_4049m_ve_train, p_5059f_ve_train, p_5059m_ve_train,
+                  p_6069f_ve_train, p_6069m_ve_train, p_7079f_ve_train, p_7079m_ve_train)
+p_v_test <- list(p_40_ve_test, p_4049_ve_test, p_5059_ve_test, p_6069_ve_test, p_7079_ve_test,
+                 p_40f_ve_test, p_40m_ve_test,
+                 p_4049f_ve_test, p_4049m_ve_test, p_5059f_ve_test, p_5059m_ve_test,
+                 p_6069f_ve_test, p_6069m_ve_test, p_7079f_ve_test, p_7079m_ve_test)
+p_v <- list(p_40_ve, p_4049_ve, p_5059_ve, p_6069_ve, p_7079_ve,
+            p_40f_ve, p_40m_ve,
+            p_4049f_ve, p_4049m_ve, p_5059f_ve, p_5059m_ve,
+            p_6069f_ve, p_6069m_ve, p_7079f_ve, p_7079m_ve)
+names(p_v_train) <- c('p_40_ve', 'p_4049_ve', 'p_5059_ve', 'p_6069_ve', 'p_7079_ve',
+                      'p_40f_ve', 'p_40m_ve',
+                      'p_4049f_ve', 'p_4049m_ve', 'p_5059f_ve', 'p_5059m_ve',
+                      'p_6069f_ve', 'p_6069m_ve', 'p_7079f_ve', 'p_7079m_ve')
+names(p_v_test) <- c('p_40_ve', 'p_4049_ve', 'p_5059_ve', 'p_6069_ve', 'p_7079_ve',
+                     'p_40f_ve', 'p_40m_ve',
+                     'p_4049f_ve', 'p_4049m_ve', 'p_5059f_ve', 'p_5059m_ve',
+                     'p_6069f_ve', 'p_6069m_ve', 'p_7079f_ve', 'p_7079m_ve')
+names(p_v) <- c('p_40_ve', 'p_4049_ve', 'p_5059_ve', 'p_6069_ve', 'p_7079_ve',
+                'p_40f_ve', 'p_40m_ve',
+                'p_4049f_ve', 'p_4049m_ve', 'p_5059f_ve', 'p_5059m_ve',
+                'p_6069f_ve', 'p_6069m_ve', 'p_7079f_ve', 'p_7079m_ve')
+
+#check GRS distribution across age groups - it should be the same because GRS
 #doesn't change with age
 ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs), alpha = 0.4) +
   geom_density(aes(x=p_v$p_5059_ve$grs), alpha = 0.4) +
@@ -1049,9 +1153,9 @@ ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs), alpha = 0.4) +
   geom_density(aes(x=p_v$p_7079_ve$grs), alpha = 0.4) +
   geom_density(aes(x=p_v$p_40_ve$grs), alpha = 0.4) +
   xlab('GRS')
-#yes, almost exactly the same - nothing weird going on!
+#yes, almost exactly the same
 
-#comparing case v control GRS across all groups:
+#comparing case v control GRS across all groups
 ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 1]), alpha = 0.4, color='red') +
   geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 0]), alpha = 0.4) +
   geom_density(aes(x=p_v$p_5059_ve$grs[p_v$p_5059_ve$case == 1]), alpha = 0.4, color='red') +
@@ -1063,7 +1167,7 @@ ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 1]), alpha
   geom_density(aes(x=p_v$p_40_ve$grs[p_v$p_40_ve$case == 1]), alpha = 0.4, color='red') +
   geom_density(aes(x=p_v$p_40_ve$grs[p_v$p_40_ve$case == 0]), alpha = 0.4)
 
-#comparing one cohort at a time:
+#plot case v control GRS one group at a time:
 d4049 <- ggplot() + geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 1]), alpha = 0.4, linetype = 'dashed') +
   geom_density(aes(x=p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 0]), alpha = 0.4) +
   geom_vline(xintercept = mean(p_v$p_4049_ve$grs[p_v$p_4049_ve$case == 1]), linetype='dashed') +
@@ -1158,7 +1262,6 @@ d7079m <- ggplot() + geom_density(aes(x=p_v$p_7079m_ve$grs[p_v$p_7079m_ve$case =
 #install.packages('patchwork')
 library(patchwork)
 
-#display plots together:
 gridfull <- d40 / (d40f + d40m) + plot_annotation(title = 'Full Cohort', theme = theme(plot.title = element_text(hjust = 0.5)))
 
 grid4049 <- d4049 + d4049f + d4049m + plot_annotation(title = 'Age 40-49', theme = theme(plot.title = element_text(hjust = 0.5)))
@@ -1169,16 +1272,8 @@ gridsub <- grid4049 / grid5059 / grid6069 / grid7079 + plot_annotation(title = '
 
 prs_cohort_distribution <- gridfull / wrap_elements(full = gridsub) + plot_layout(ncol=1, nrow=3, heights=c(0.5,0.5,4))
 
-#save to file:
-pdf(file = "prs_cohort_distribution.pdf",
-    width = 8.27,
-    height = 11.67)
-prs_cohort_distribution
-dev.off()
-
-
-#7A. Do logistic  regression testing
-#==================================
+#8. Do logistic  regression testing in training cohort
+#=========================================================
 #make a list with each variable plus its p value and odds ratio for predicting cases or controls:
 #-------------------------
 or_list <- function(p_xx_v, col_list) {
@@ -1192,7 +1287,7 @@ or_list <- function(p_xx_v, col_list) {
     
     x <- colnames(p_xx_v)[col_list][i]
     print(paste0('case~',x))
-    if (length(unique(na.exclude(p_xx_v[[col_list[i]]]))) != 1) { #if there's only one value in the column glm can't run
+    if (length(unique(na.exclude(p_xx_v[[col_list[i]]]))) > 1) { #if there's only one value in the column glm can't run
       basemod <- glm(noquote(paste0('case~',x)), data=p_xx_v, family=binomial) %>% summary()
       lr[[i]][[1]] <- round(exp(basemod$coefficients[2,1]),2)
       lr[[i]][[2]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
@@ -1210,38 +1305,137 @@ or_list <- function(p_xx_v, col_list) {
   return(lr)
 }
 
-lr_v <- lapply(p_v, function(x) or_list(x, c(4,7,16:23,26:45))) #indexing because some columns don't contain variables, & some variables don't contain enough data
-#note: it turns out that logistic regression of the ordinal variables smoking status, alcohol intake and processed meat intake is
-#only assessing the first level of the variable (e.g. comparing 'never smoked' to 'previously smoked', but not comparing 'never' to 'current',
-#or 'previous' to 'current'.)
-#This wasn't fixed at this stage in the pipeline. However, supplementary table 6 contains logistic regression results for all levels
-#of ordinal variables. Additionally, no ordinal variable was included in the final integrated risk model, so this error does not affect
-#final study results.
+col_list_40 <- which(colnames(p_v$p_40_ve) %in% c("sym_age","sex","TDI","BMI","waist_circumference","ever_smoked","smoking_status","alcohol_intake","diabetes","processed_meat_intake","PC1","PC2","PC3","PC4","PC5","fh_mat","fh_pat","fh","weightloss","unintentional_weightloss","other_weightloss","loss_appetite","iron_def","abdo_mass","abdo_pain","rectal_bloodloss","change_bowel_habit","haemoglobin","haem_level","fob_8weeks","grs","grs_quintile","zscore"))
+lr_v_train <- lapply(p_v_train, function(x) or_list(x, col_list_40)) #indexing because some dataset columns don't contain variables
 
-#make a list of only significant (p < 0.05 / 30, Bonferroni correction) variables:
-lrp_v <- replicate(length(lr_v), list(NA))
+#make a list of only significant (p < 0.05 / 33) variables
+#-------------------------
+lrp_v_train <- replicate(length(lr_v_train), list(NA))
 
-#following function only works if every cohort has same number of variables (all have 30)
-temp <- unlist(lr_v)
-for (i in 1:length(lr_v)) { #for all 30 cohorts
+#following function only works if every cohort has same number of variables (all have 33)
+temp <- unlist(lr_v_train)
+
+for (i in 1:length(lr_v_train)) { #for all 15 cohorts
+  print(names(lr_v_train)[i])
+  v <- length(lr_v_train[[i]]) #v = number of variables (33)
   x <- c()
-  print(names(lr_v)[i])
-  v <- length(lr_v[[i]]) #for all 30 variables
-  for (j in 1:v) {
-    print(names(lr_v[[i]][j]))
-    #if p-value of variable < 0.05/30, append this variable number to a vector called 'x' of variables to keep
+  for (j in 1:v) { #for all 33 variables
+    print(names(lr_v_train[[i]][j]))
+    #if p-value of variable < 0.05/33, append this variable number to a vector x of variables to keep
     n <- v*4*(i-1) + j*4
     if (!is.na(temp[n]) & temp[n] < (0.05/v)) {x <- c(x,j); print('YES'); print(temp[v*4*(i-1) + j*4])}
     else {print('NO'); print(temp[v*4*(i-1) + j*4])}
-    print(paste0('X IS ',x))
-    lrp_v[[i]] <- lr_v[[i]][x] #add logistic regression results for the cohort to lrp_v, only including variables with sig p values
+    lrp_v_train[[i]] <- lr_v_train[[i]][x] #add to lrp_v the cohort, only including variables with sig p values
   }
 }
-names(lrp_v) <- names(lr_v)
+names(lrp_v_train) <- names(lr_v_train)
 
-#8. Get ROCAUC measures for signifcantly associated variables
-#=========================================================
-# Takes a formula and a data frame and returns a roc object (Harry Green's code)
+#9A. Build the risk model in training cohort by adding variables which cause biggest jump in ROCAUC (overfitting avoided with
+#5-fold cross validation)
+#===========================================================================================================================
+#try to install caret:
+#install.packages('caret')
+library(caret)
+#doesn't work due to conflicting package versions in R 4.1.1 on Biobank. Quit and restart R session,
+#(do not terminate RStudio) then run library(caret) again
+library(caret)
+#install.packages('readr')
+library(readr)
+
+#refomat training dataset for 5 fold cross validation in the caret package (e.g. control/case needs to be a factor variable)
+#-------------------------------------------------------------------------------------------------------------------------
+p_validate <- replicate(length(lr_v_train), list(NA))
+for (i in 1:length(p_validate)) { #for all 15 cohorts
+  print('------------')
+  print(names(p_v_train)[i]) #print which cohort is currently being reformatted (useful for debugging errors)
+  print('------------')
+  
+  print('adding cohort data frame to list') #only include variables significantly associated with CRC diagnosis following logistic regression
+  p_validate[[i]] <- as.data.frame(unclass(p_v_train[[i]][,colnames(p_v_train[[i]]) %in% c(names(lrp_v_train[[i]])[!names(lrp_v_train[[i]]) %in% c('zscore','grs_quintile','smoking_status')],'case')]))
+  
+  print('converting case to a factor')
+  p_validate[[i]]$case[p_validate[[i]]$case == 1] <- "case"
+  p_validate[[i]]$case[p_validate[[i]]$case == 0] <- "control"
+  p_validate[[i]]$case <- factor(p_validate[[i]]$case, levels = c("control","case"))
+  
+}
+names(p_validate) <- names(p_v_train)
+
+#build the risk model
+#--------------------
+#first set up the control for 5-fold cross validation
+set.seed(1924) 
+controlroc <- trainControl(method = "repeatedcv", 
+                           number = 5, #5 fold cross validation
+                           repeats = 5, #repeated 5 times
+                           savePredictions = "final",
+                           classProbs = TRUE,
+                           selectionFunction = "oneSE", 
+                           summaryFunction = twoClassSummary, allowParallel = TRUE)
+
+#function to build model iteratively according to which variables cause largest increase in ROCAUC:
+rocauc_jump <- function(lrp_xx, p_xx_v) {
+  #character vector of named variables:
+  factors <- names(lrp_xx)
+  #create empty list:
+  rocp <- replicate(length(lrp_xx), list(ROC = 0), simplify = FALSE)
+  
+  for (i in 1:length(lrp_xx)) { #e.g., 1:7
+    for (j in 1:length(factors)) { #'factors' decreases in size with each loop, so this will be 1:7, then 1:6, then 1:5...
+      
+      #print out which model is currently being tested + the ROCAUC of that model:
+      print(paste0(names(rocp)[1:i-1],collapse='+'))
+      print(factors[j])
+      print(paste0('case~',paste0(names(rocp)[1:i-1],collapse='+'),'+',factors[j]))
+      
+      print('running caret k-fold validation')
+      set.seed(1924)
+      k_model <- train(
+        formula(paste0('case~',paste0(names(rocp)[1:i-1],collapse='+'),'+',factors[j])), 
+        data = p_xx_v,
+        trControl=controlroc,
+        na.action='na.pass',
+        metric="ROC",
+        method="glm",
+        family="binomial"
+      )
+      
+      print(k_model$results$ROC)
+      print('-------------------')
+      
+      if (((k_model$results$ROC == rocp[[i]]$ROC) == TRUE) && ((names(rocp)[i] != factors[j]) == TRUE)) {
+        warning(paste('ROC AUC of',factors[j],'matched',names(rocp)[i]))
+        #this warning means two different risk models share the highest ROCAUC (so far), so one of them isn't being included in the calculation
+        
+      } else if ((k_model$results$ROC > rocp[[i]]$ROC) == TRUE) {
+        rocp[[i]]$ROC <- k_model$results$ROC
+        names(rocp)[i] <- factors[j]
+        maxf <- factors[j]
+      }
+    }
+    #remove the factor with the best ROC AUC from factors
+    factors <- factors[factors != maxf]
+  }
+  return(rocp)
+}
+
+rocauc_irm_train <- replicate(length(lr_v_train), list(NA))
+
+for (i in 1:length(p_v_train)) {
+  #get list of variables significantly associated with logistic regression, excluding two variables derived from GRS (GRS quintile and z score) - because we only want GRS to be counted once in the risk model
+  x <- lrp_v_train[[i]][which(names(lrp_v_train[[i]]) != 'zscore' & names(lrp_v_train[[i]]) != 'grs_quintile' & names(lrp_v_train[[i]]) != 'smoking_status')]
+  
+  if (length(x) != 0) {
+    #do rocauc jump calculation for remaining variables
+    rocauc_irm_train[[i]] <- rocauc_jump(x,p_validate[[i]])
+  } else {rocauc_irm_train[[i]] <- NA}
+  
+}
+names(rocauc_irm_train) <- names(lrp_v_train)
+
+#9B. evaluate model built in 9A in the testing cohort
+#=====================================================
+# Takes a formula and a data frame and returns a roc object including confidence intervals (Harry Green's code)
 #install.packages("pROC")
 library(pROC)
 rocauc=function(form,dataframe,pt){
@@ -1254,95 +1448,27 @@ rocauc=function(form,dataframe,pt){
   return(roc)
 }
 
-#add ROCAUC values to list of logistic regression results for significantly associated variables
-#-----------------------------------------------------------------------------------------------
-add_rocauc <- function(p_x, lr_x, lrp_x) {
-  for (i in 1:length(lr_x)) { #30 cohorts
-    chrt <- names(lr_x)[i]
-    print(paste0(i,' ',chrt))
-    for (j in 1:length(lr_x[[i]])) {  #30 variables
-      var <- names(lr_x[[i]][j])
-      if (!is.na(lr_x[[i]][[j]][[1]]) & #if it was possible to do logistic regression on this variable previously, then it should be possible to do ROCAUC
-          !is.na(p_v[[i]][,which(colnames(p_v[[i]]) == var)][p_v[[i]][5] == 1]) #check if cases exist
-      ) {
-        print(paste0(j,' ',var))
-        basemod <- rocauc(noquote(paste0('case~',var)), p_x[[i]], F) #calculate ROC AUC
-        lr_x[[i]][[j]][[5]] <- round(basemod$ci[2],2) #add ROCAUC
-        lr_x[[i]][[j]][[6]] <- round(basemod$ci[1],2)
-        lr_x[[i]][[j]][[7]] <- round(basemod$ci[3],2)
-      } else {
-        print('only 1 value in column, returning NA')
-        lr_x[[i]][[j]][[5]] <- NA
-        lr_x[[i]][[j]][[6]] <- NA
-        lr_x[[i]][[j]][[7]] <- NA
-      }
-      #names(lr_x[[i]][[j]][1:6]) <- c('OR','ORL95','ORU95','ROCAUC','ROCL95','ROCU95')
-      #no idea why renaming doesn't work
+#ROCAUC of models in testing cohort:
+rocauc_irm_test <- replicate(length(lr_v_train), list(NA))
+names(rocauc_irm_test) <- names(rocauc_irm_train)
+for (i in 1:length(rocauc_irm_test)) { #for each cohort
+  if (!is.na(rocauc_irm_train[[i]][[1]])) {
+    rocauc_irm_test[[i]] <- replicate(length(rocauc_irm_train[[i]]), list(NA))
+    for (j in 1:length(rocauc_irm_train[[i]])) { #for each variable iteration included in the risk model
+      print(names(rocauc_irm_train)[i])
+      print(j)
+      getauc <- rocauc(paste0('case~',
+                              paste0(names(rocauc_irm_train[[i]])[1:j],collapse='+')),
+                       p_v_test[[i]], TRUE)
+      print(names(rocauc_irm_train[[i]][j]))
+      
+      rocauc_irm_test[[i]][[j]] <- list(ROC = getauc$ci[2],L95 = getauc$ci[1],U95 = getauc$ci[3])
+      names(rocauc_irm_test[[i]]) <- names(rocauc_irm_train[[i]])
     }
   }
-  return(lr_x)
 }
 
-rocauc_v <- add_rocauc(p_v,lr_v)
 
-#8A. Build the risk model by adding variables which cause biggest jump in ROCAUC
-#==============================================================================
-rocauc_jump <- function(lrp_xx, p_xx_v) {
-  #character vector of named variables:
-  factors <- names(lrp_xx)
-  #create empty list:
-  rocp <- replicate(length(lrp_xx), list(ROC = 0, LB = 0, UB = 0), simplify = FALSE)
-  
-  for (i in 1:length(lrp_xx)) { #e.g., for i in 1:7
-    for (j in 1:length(factors)) { #'factors' decreases in size with each loop, so this will be 1:7, then 1:6, then 1:5...
-      
-      #print out which model is currently being tested + the ROCAUC of that model:
-      print(paste0(names(rocp)[1:i-1],collapse='+'))
-      print(factors[j])
-      print(paste0('case~',paste0(names(rocp)[1:i-1],collapse='+'),'+',factors[j]))
-      
-      baseauc <- rocauc(paste0('case~',paste0(names(rocp)[1:i-1],collapse='+'),'+',factors[j]), p_xx_v, FALSE)
-      print(baseauc$ci[2])
-      print('-------------------')
-      
-      if (((baseauc$ci[2] == rocp[[i]]$ROC) == TRUE) && ((names(rocp)[i] != factors[j]) == TRUE)) {
-        warning(paste('ROC AUC of',factors[j],'matched',names(rocp)[i]))
-        #this warning means two different risk models share the highest ROCAUC (so far), so one of them isn't being included in the calculation
-        
-      } else if ((baseauc$ci[2] > rocp[[i]]$ROC) == TRUE) {
-        rocp[[i]]$ROC <- baseauc$ci[2]
-        rocp[[i]]$LB <- baseauc$ci[1]
-        rocp[[i]]$UB <- baseauc$ci[3]
-        names(rocp)[i] <- factors[j]
-        maxf <- factors[j]
-      }
-    }
-    #remove the factor with the best ROC AUC from factors
-    factors <- factors[factors != maxf]
-  }
-  return(rocp)
-}
-
-rocauc_irm <- replicate(length(lr_v), list(NA))
-
-for (i in 1:length(p_v)) {
-  #get list of variables significantly associated with logistic regression, excluding FOB and smoking status
-  #FOB excluded because it doesn't make sense to exclude an existing (and outdated) diagnostic test in the risk model
-  #smoking status excluded because logistic regression showed people who previously smoked were more at risk of CRC
-  #in the two-year period then people who never smoked or reported currently smoking. This doesn't make much sense
-  #and might be due to underlying bias in this variable.
-  x <- lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'smoking_status')]
-  
-  if (length(x) != 0) {
-    #do rocauc jump calculation for remaining variables
-    rocauc_irm[[i]] <- rocauc_jump(x,p_v[[i]])
-  } else {rocauc_irm[[i]] <- NA}
-  
-}
-names(rocauc_irm) <- names(lrp_v)
-
-#8B plot the increase in ROCAUC as more variables are added to risk model
-#======================================================================
 #create data frame to use in plot:
 #----------------------------------
 rocauc_frame <- function(rocauc_irm) {
@@ -1351,17 +1477,18 @@ rocauc_frame <- function(rocauc_irm) {
   LB_list <- c(0.5)
   for (i in 1:length(rocauc_irm)) {
     rocaucs_list <- c(rocaucs_list, rocauc_irm[[i]]$ROC)
-    UB_list <- c(UB_list, rocauc_irm[[i]]$UB)
-    LB_list <- c(LB_list, rocauc_irm[[i]]$LB)
+    UB_list <- c(UB_list, rocauc_irm[[i]]$U95)
+    LB_list <- c(LB_list, rocauc_irm[[i]]$L95)
   }
   aucs <- data.frame(aucs = rocaucs_list,
                      var = c(0:length(rocauc_irm)),
-                     UB = UB_list,
-                     LB = LB_list)
+                     U95 = UB_list,
+                     L95 = LB_list)
   return(aucs)
 }
 
-rocauc_frame_40e <- rocauc_frame(rocauc_irm$p_40_ve)
+rocauc_frame_40e_test <- rocauc_frame(rocauc_irm_test$p_40_ve)
+rocauc_frame_40e_train <- rocauc_frame(rocauc_irm_train$p_40_ve)
 
 #plot:
 #----
@@ -1371,38 +1498,43 @@ HGtheme=theme_bw()+
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         plot.title = element_text(hjust = 0.5))
-rocauc_plot_e <- ggplot(data=rocauc_frame_40e, aes(x=var, y=aucs, ymin=LB, ymax=UB)) +
+#plot iterative rocauc
+rocauc_plot_e_train <- ggplot(data=rocauc_frame_40e_train, aes(x=var, y=aucs, ymin=L95, ymax=U95)) +
   geom_point(colour = '#00C896', size=3) + geom_line(linetype = "dashed") + geom_errorbar(width=0.1) +
   HGtheme + xlab("variables added to integrated risk model") + ylab("ROC AUC") +
-  scale_x_continuous(breaks=0:8, labels=c("none","age at\nfirst symptom", "& abdominal\npain",
-                                          "& PRS","& sex","& ever\nsmoked","& rectal\nbloodloss",
-                                          "& waist\ncircumference",
-                                          "& change in\nbowel habits")) +
-  scale_y_continuous(breaks=seq(0.5,0.85,by=0.05)) + theme(plot.margin = unit(c(5.5, 5.5, 20, 30), "points"))
+  scale_x_continuous(breaks=0:length(rocauc_irm_train$p_40_ve), labels=c("none",names(rocauc_irm_train$p_40_ve))) +
+  scale_y_continuous(breaks=seq(0.5,0.9,by=0.05)) + theme(plot.margin = unit(c(5.5, 5.5, 20, 30), "points"))
+rocauc_plot_e_train
+rocauc_plot_e_test <- ggplot(data=rocauc_frame_40e_test, aes(x=var, y=aucs, ymin=L95, ymax=U95)) +
+  geom_point(colour = '#00C896', size=3) + geom_line(linetype = "dashed") + geom_errorbar(width=0.1) +
+  HGtheme + xlab("variables added to integrated risk model") + ylab("ROC AUC") +
+  scale_x_continuous(breaks=0:length(rocauc_irm_test$p_40_ve), labels=c("none",names(rocauc_irm_test$p_40_ve))) +
+  scale_y_continuous(breaks=seq(0.5,0.9,by=0.05)) + theme(plot.margin = unit(c(5.5, 5.5, 20, 30), "points"))
+rocauc_plot_e_test
 
-
-#9 Test different models with Akaike information criterion (AIC)
-#================================================================
+#10. Evaluate all possible models in the training cohort with Akaike information criterion (AIC)
+#==============================================================================================
 #install.packages('AICcmodavg')
 library(AICcmodavg)
 
 #list for all possible logistic regression formulas
-aic_irm <- replicate(length(lr_v), list(NA))
+aic_irm_train <- replicate(length(lr_v_train), list(NA))
 #list for results of AIC testing on all possible models
-aic_models <- replicate(length(lr_v), list(NA))
+aic_models_train <- replicate(length(lr_v_train), list(NA))
 
 #get all possible formulas for all variables for every cohort (it only took 10 nested for/if loops...)
-for (i in 1:length(p_v)) { #15
-  print(names(p_v[i]))
-  
-  vlen <- length(lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'smoking_status')])
+for (i in 1:length(p_v_train)) { #for each of 15 (sub)cohorts
+  print(names(p_v_train)) #print cohort name
+
+  #get total number of significant variables in the cohort (i.e. variables which could be included in the model)
+  vlen <- length(lrp_v_train[[i]][which(names(lrp_v_train[[i]]) != 'grs_quintile' & names(lrp_v_train[[i]]) != 'zscore' & names(lrp_v_train[[i]]) != 'smoking_status')])
   
   #if more than 0 significant variables:
   if (vlen != 0) {
     form_l <- sapply((1:vlen), function(x)
-      combn(names(lrp_v[[i]][which(names(lrp_v[[i]]) != 'fob' & names(lrp_v[[i]]) != 'smoking_status')]), x))
+      combn(names(lrp_v_train[[i]][which(names(lrp_v_train[[i]]) != 'grs_quintile' & names(lrp_v_train[[i]]) != 'zscore' & names(lrp_v_train[[i]]) != 'smoking_status')]), x))
     
-    if (length(form_l) != 0) { #if more than 0 significant variables (again - checking for the same thing twice stops the function breaking?)
+    if (length(form_l) != 0) { #if more than 0 significant variables (again - checking for the same thing stops function breaking?)
       form_c <- character()
       for (j in 1:vlen) {
         if (length(ncol(form_l[[j]])) != 0) { #if more than 1 significant variable:
@@ -1412,7 +1544,7 @@ for (i in 1:length(p_v)) { #15
           }
           #add all possible variable combinations to a list, 'models'
           #place first model in list
-          models <- list(lm(paste0('case',form_c[1]), data = p_v[[i]])) 
+          models <- list(glm(paste0('case',form_c[1]), data = p_v[[i]], family='binomial')) 
           #add formula as a name to the list (this was a pain):
           if (length(models[[1]]$terms[[3]]) <= 1) {
             names(models)[1] <- paste0(as.character(models[[1]]$terms[[2]]), '~', as.character(models[[1]]$terms[[3]]))
@@ -1426,7 +1558,7 @@ for (i in 1:length(p_v)) { #15
             names(models)[l] <- y
           }
           for (l in 2:length(form_c)) { #then add all other models
-            models[[length(models)+1]] <- lm(paste0('case',form_c[l]), data = p_v$p_40_ve)
+            models[[length(models)+1]] <- glm(paste0('case',form_c[l]), data = p_v_train[[i]], family='binomial')
             #naming:
             if (length(models[[l]]$terms[[3]]) <= 1) {
               names(models)[l] <- paste0(as.character(models[[l]]$terms[[2]]), '~', as.character(models[[l]]$terms[[3]]))
@@ -1443,31 +1575,137 @@ for (i in 1:length(p_v)) { #15
         } else { #else if only 1 significant variable:
           #add the one formula of case~variable to 'models' list
           form_c <- paste0('~',form_l)
-          models <- list(lm(paste0('case',form_c[1]), data = p_v[[i]])) 
+          models <- list(glm(paste0('case',form_c[1]), data = p_v_train[[i]], family='binomial')) 
         }
       }
       #add models list to final list of all possible variable combinations for all cohorts:
-      aic_irm[[i]] <- models
+      aic_irm_train[[i]] <- models
       #run AIC testing on all models
       print('running AIC')
-      aic_models[[i]] <- aictab(cand.set = models, modnames = form_c)
+      aic_models_train[[i]] <- aictab(cand.set = models, modnames = form_c)
     }
   } else { #if there are no significant variables:
-    aic_irm[[i]] <- NA} #just add NA to the list
+    aic_irm_train[[i]] <- NA} #just add NA to the list
 }
 
-names(aic_irm) <- names(p_v)
-names(aic_models) <- names(p_v)
+names(aic_irm_train) <- names(p_v_train)
+names(aic_models_train) <- names(p_v_train)
 
-#10 Conclusion and model ROCAUCs
-#=================================
-#Building model iteratively with ROCAUC suggests best risk model is ~sym_age+abdo_pain+grs+sex
-#Get ROCAUC of this model:
-rocauc('case~sym_age+abdo_pain+grs+sex', p_v$p_40_ve, TRUE)
-#AIC suggests best model is ~sym_age+abdo_pain+grs+sex+rectal_bloodloss+change_bowel_habit
-#Get ROCAUC:
-rocauc('case~sym_age+abdo_pain+grs+sex+rectal_bloodloss+change_bowel_habit', p_v$p_40_ve, TRUE)              
-                     
-#And of GRS alone:
-rocauc('case~grs', p_v$p_40_ve, TRUE)
+#AIC scoring in the 60-69 F and 60-69 M subcohorts should have tested models: case ~ abdominal pain,
+#case ~ rectal bloodloss and case ~ abdominal pain + rectal bloodloss. Instead it only tested the first
+#two models, but twice. Fix this:
+
+form_c <- c('~rectal_bloodloss','~abdo_pain','~rectal_bloodloss+abdo_pain')
+models <- list()
+models[1] <- list(glm(paste0('case',form_c[1]), data = p_v_train$p_6069f_ve, family='binomial'))
+models[2] <- list(glm(paste0('case',form_c[2]), data = p_v_train$p_6069f_ve, family='binomial'))
+models[3] <- list(glm(paste0('case',form_c[3]), data = p_v_train$p_6069f_ve, family='binomial'))
+names(models) <- form_c
+aic_p_6069f <- aictab(cand.set = models, modnames = names(models))
+
+models <- list()
+models[1] <- list(glm(paste0('case',form_c[1]), data = p_v_train$p_6069m_ve, family='binomial'))
+models[2] <- list(glm(paste0('case',form_c[2]), data = p_v_train$p_6069m_ve, family='binomial'))
+models[3] <- list(glm(paste0('case',form_c[3]), data = p_v_train$p_6069m_ve, family='binomial'))
+names(models) <- form_c
+aic_p_6069m <- aictab(cand.set = models, modnames = names(models))
+
+aic_models_train$p_6069f_ve <- aic_p_6069f
+aic_models_train$p_6069m_ve <- aic_p_6069m
+
+#add ROCAUC values to each AIC model (in the testing dataset)
+#--------------------------------------------------------------
+aic_irm_test <- replicate(length(p_v_test), list(NA))
+
+for (i in c(1:4,6:8,10:13)) {
+  df <- data.frame(aic_model = unique(aic_models_train[[i]]$Modnames))
+  df$ROCAUC <- rep(NA, nrow(df))
+  df$L95 <- rep(NA, nrow(df))
+  df$U95 <- rep(NA, nrow(df))
+  for (j in 1:nrow(df)) {
+    baseauc <- rocauc(formula(paste0('case',df$aic_model[j])),p_v_test[[i]],FALSE)
+    df$ROCAUC[j] <- baseauc$ci[2]
+    df$L95[j] <- baseauc$ci[1]
+    df$U95[j]  <- baseauc$ci[3]
+  }
+  aic_irm_test[[i]] <- df
+}
+names(aic_irm_test) <- names(aic_models_train)
+
+#both AIC scoring and ROCAUC algorithm concur that an IRM including 6 variables is most predictive
+#in the full training cohort
+
+#11. Evaluate 6-variable model in the testing (sub)cohorts
+#===========================================================
+#ROCAUC in the full cohort
+rocauc('case~sym_age+sex+abdo_pain+rectal_bloodloss+change_bowel_habit+grs',p_v_test$p_40_ve,TRUE)
+#ROCAUC = 0.7559 (0.7053-0.8065)
+
+#mean ROCAUC across subcohorts:
+#-----------------------------
+rocauc_test_subcohorts <- matrix(rep(NA, times=15*3), ncol=3, byrow=TRUE)
+rownames(rocauc_test_subcohorts) <- names(p_v_test)
+colnames(rocauc_test_subcohorts) <- c('ROCAUC','L95','U95')
+
+for (i in c(1:15)) {
+  print(i)
+  if (i %in% c(6:15) == TRUE) { #don't include sex as variable in the cohorts which only contain one sex
+    baseauc <- rocauc('case~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit',dataframe = p_v_test[[i]], pt=FALSE)
+  } else {
+    baseauc <- rocauc('case~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit+sex',dataframe = p_v_test[[i]], pt=FALSE)
+  }
+  rocauc_test_subcohorts[i,1] <- signif(baseauc$ci[2],3)
+  rocauc_test_subcohorts[i,2] <- signif(baseauc$ci[1],3)
+  rocauc_test_subcohorts[i,3] <- signif(baseauc$ci[3],3)
+}
+
+#mean ROCAUC across all subcohorts
+mean(rocauc_test_subcohorts[-1,1])
+sd(rocauc_test_subcohorts[-1,1])
+#0.75 (SD: 0.06)
+
+#mean across age 40-49
+mean(rocauc_test_subcohorts[rownames(rocauc_test_subcohorts) %in% c('p_4049_ve',
+                                                                    'p_40f_ve',
+                                                                    'p_40m_ve'),1])
+sd(rocauc_test_subcohorts[rownames(rocauc_test_subcohorts) %in% c('p_4049_ve',
+                                                                    'p_40f_ve',
+                                                                    'p_40m_ve'),1])
+#0.715 (SD: 0.06)
+
+#mean across age 50-59
+mean(rocauc_test_subcohorts[rownames(rocauc_test_subcohorts) %in% c('p_5059_ve',
+                                                                    'p_50f_ve',
+                                                                    'p_50m_ve'),1])
+sd(rocauc_test_subcohorts[c(3,10,11),1])
+#0.76 (SD: 0.04)
+
+#mean across age 60-69
+mean(rocauc_test_subcohorts[rownames(rocauc_test_subcohorts) %in% c('p_6069_ve',
+                                                                    'p_60f_ve',
+                                                                    'p_60m_ve'),1])
+sd(rocauc_test_subcohorts[c(4,12,13),1])
+#0.69 (SD: 0.002)
+
+#mean across age 70-79
+mean(rocauc_test_subcohorts[rownames(rocauc_test_subcohorts) %in% c('p_7079_ve',
+                                                                    'p_70f_ve',
+                                                                    'p_70m_ve'),1])
+sd(rocauc_test_subcohorts[c(5,14,15),1])
+#0.79 (SD: 0.02)
+
+
+#ROCAUC in female and male subcohorts
+rocauc('case~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit',dataframe = p_v_test$p_40f_ve, pt=TRUE)
+#F: 0.7436 (0.6565-0.8307)
+rocauc('case~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit',dataframe = p_v_test$p_40m_ve, pt=TRUE)
+#M: 0.7539 (0.6907-0.8171)
+
+
+#plot ROCAUCs and 95% confidence intervals across cohorts
+ggplot(data.frame(auc=rocauc_test_subcohorts[,1],
+                  cohort=rownames(rocauc_test_subcohorts),
+                  age_group=c('all','40-49','50-59','60-69','70-79','all','all','40-49','40-49','50-59','50-59','60-69','60-69','70-79','70-79')), aes(y=auc, x=cohort, ymin=rocauc_test_subcohorts[,2], ymax=rocauc_test_subcohorts[,3], colour=age_group)) + 
+  geom_point() + geom_errorbar()
+
                      
