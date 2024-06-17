@@ -1709,3 +1709,256 @@ ggplot(data.frame(auc=rocauc_test_subcohorts[,1],
   geom_point() + geom_errorbar()
 
                      
+#12A (Miscellaneous) Build models and evaluate predictivity in left- and right-sided CRC seperately
+#==================================================================================================
+p_v_train_lr <- p_v_train$p_40_ve
+                     
+#variable to differentiate between left-sided CRC, and any other participant (with CRC or not):
+p_v_train_lr$left_sided_CRC[is.na(p_v_train_lr$left_sided_CRC)] <- 0
+sum(p_v_train_lr$left_sided_CRC[p_v_train_lr$left_sided_CRC == 1]) #253 cases with left sided CRC
+#variable to differentiate between right-sided CRC, and any other participant (with CRC or not):
+p_v_train_lr$right_sided_CRC[is.na(p_v_train_lr$right_sided_CRC)] <- 0
+sum(p_v_train_lr$right_sided_CRC[p_v_train_lr$right_sided_CRC == 1]) #62 cases with right sided CRC
+
+#do logistic regression in full cohort training dataset:
+or_list2 <- function(p_xx_v, col_list, outcome) {
+  lr <- replicate(length(col_list), list(OR = NA, L95 = NA, U95 = NA, p = NA,
+                                         OR2 = NA, L952 = NA, U952 = NA, p = NA,
+                                         OR3 = NA, L953 = NA, U953 = NA, p = NA,
+                                         OR4 = NA, L954 = NA, U954 = NA, p = NA,
+                                         OR5 = NA, L955 = NA, U955 = NA, p = NA,
+                                         OR6 = NA, L956 = NA, U956 = NA, p = NA), simplify = FALSE)
+  
+  #print cohort age
+  print(paste0('age:',min(p_xx_v$sym_age),'-',max(p_xx_v$sym_age)))
+  
+  for (i in 1:length(col_list)) {
+    print(i) #print column/iteration
+    
+    x <- colnames(p_xx_v)[col_list][i]
+    print(paste0(outcome,'~',x))
+    if (length(unique(na.exclude(p_xx_v[[col_list[i]]]))) > 1) { #if there's only one value in the column glm can't run
+      basemod <- glm(noquote(paste0(outcome,'~',x)), data=p_xx_v, family=binomial) %>% summary()
+      lr[[i]][[1]] <- round(exp(basemod$coefficients[2,1]),2)
+      lr[[i]][[2]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+      lr[[i]][[3]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+      lr[[i]][[4]] <- (signif(basemod$coefficients[2,4],2))
+      
+      if (nrow(basemod$coefficients) >= 3) {
+        #nrow(basemod$coefficients) is the number of comparisons done during logistic regression. E.g. a factor variable
+        #with 2 levels (ever smoked yes or no) has only 1 comparison but a variable with 3 levels (never smoked, previously,
+        #or current) has > 1 comparison.
+        lr[[i]][[5]] <- round(exp(basemod$coefficients[3,1]),2)
+        lr[[i]][[6]] <- round(exp(basemod$coefficients[3,1]-1.96*basemod$coefficients[3,2]),2)
+        lr[[i]][[7]] <- round(exp(basemod$coefficients[3,1]+1.96*basemod$coefficients[3,2]),2)
+        lr[[i]][[8]] <- (signif(basemod$coefficients[3,4],2))
+      }
+      if (nrow(basemod$coefficients) >= 4) {
+        lr[[i]][[9]] <- round(exp(basemod$coefficients[4,1]),2)
+        lr[[i]][[10]] <- round(exp(basemod$coefficients[4,1]-1.96*basemod$coefficients[4,2]),2)
+        lr[[i]][[11]] <- round(exp(basemod$coefficients[4,1]+1.96*basemod$coefficients[4,2]),2)
+        lr[[i]][[12]] <- (signif(basemod$coefficients[4,4],2))
+      }
+      if (nrow(basemod$coefficients) >= 5) {
+        lr[[i]][[13]] <- round(exp(basemod$coefficients[5,1]),2)
+        lr[[i]][[14]] <- round(exp(basemod$coefficients[5,1]-1.96*basemod$coefficients[5,2]),2)
+        lr[[i]][[15]] <- round(exp(basemod$coefficients[5,1]+1.96*basemod$coefficients[5,2]),2)
+        lr[[i]][[16]] <- (signif(basemod$coefficients[5,4],2))
+      }
+      if (nrow(basemod$coefficients) >= 6) {
+        lr[[i]][[17]] <- round(exp(basemod$coefficients[6,1]),2)
+        lr[[i]][[18]] <- round(exp(basemod$coefficients[6,1]-1.96*basemod$coefficients[6,2]),2)
+        lr[[i]][[19]] <- round(exp(basemod$coefficients[6,1]+1.96*basemod$coefficients[6,2]),2)
+        lr[[i]][[20]] <- (signif(basemod$coefficients[6,4],2))
+      }
+      if (nrow(basemod$coefficients) >= 7) {
+        lr[[i]][[21]] <- round(exp(basemod$coefficients[7,1]),2)
+        lr[[i]][[22]] <- round(exp(basemod$coefficients[7,1]-1.96*basemod$coefficients[7,2]),2)
+        lr[[i]][[23]] <- round(exp(basemod$coefficients[7,1]+1.96*basemod$coefficients[7,2]),2)
+        lr[[i]][[24]] <- (signif(basemod$coefficients[7,4],2))
+      }
+    } else {
+      print('only 1 value in column, returning NA')
+    }
+    names(lr)[i] <- x
+  }
+  return(lr)
+}
+
+#run logistic regression, with the outcome being right or left sided CRC respectively:
+col_list_lr <- which(colnames(p_v_train_lr) %in% c("sym_age","sex","TDI","BMI","waist_circumference","ever_smoked","smoking_status","alcohol_intake","diabetes","processed_meat_intake","PC1","PC2","PC3","PC4","PC5","fh_mat","fh_pat","fh","weightloss","unintentional_weightloss","other_weightloss","loss_appetite","iron_def","abdo_mass","abdo_pain","rectal_bloodloss","change_bowel_habit","haemoglobin","haem_level","fob_8weeks","grs","grs_quintile","zscore"))
+lr_right <- or_list2(p_v_train_lr, col_list_lr, outcome='right_sided_CRC')
+lr_left <- or_list2(p_v_train_lr, col_list_lr, outcome='left_sided_CRC')
+
+#Get list of only significant (p < 0.05 / 33) variables
+sig_p <- 0.05/33
+x <- c()
+for (i in 1:length(lr_right)) {
+  if ((!is.na(lr_right[[i]][[4]]) & (lr_right[[i]][[4]] < sig_p)) |
+      (!is.na(lr_right[[i]][[8]]) & (lr_right[[i]][[8]] < sig_p)) |
+      (!is.na(lr_right[[i]][[12]]) & (lr_right[[i]][[12]] < sig_p)) |
+      (!is.na(lr_right[[i]][[16]]) & (lr_right[[i]][[16]] < sig_p)) |
+      (!is.na(lr_right[[i]][[20]]) & (lr_right[[i]][[20]] < sig_p)) |
+      (!is.na(lr_right[[i]][[24]]) & (lr_right[[i]][[24]] < sig_p))) {
+    x <- c(x,i)
+  }
+}
+lrp_right <- lr_right[x]
+x <- c()
+for (i in 1:length(lr_left)) {
+  if ((!is.na(lr_left[[i]][[4]]) & (lr_left[[i]][[4]] < sig_p)) |
+      (!is.na(lr_left[[i]][[8]]) & (lr_left[[i]][[8]] < sig_p)) |
+      (!is.na(lr_left[[i]][[12]]) & (lr_left[[i]][[12]] < sig_p)) |
+      (!is.na(lr_left[[i]][[16]]) & (lr_left[[i]][[16]] < sig_p)) |
+      (!is.na(lr_left[[i]][[20]]) & (lr_left[[i]][[20]] < sig_p)) |
+      (!is.na(lr_left[[i]][[24]]) & (lr_left[[i]][[24]] < sig_p))) {
+    x <- c(x,i)
+  }
+}
+lrp_left <- lr_left[x]
+#results of this are that the following variables are associated with left-sided CRC:
+#"sym_age"            "sex"                "smoking_status"     "abdo_pain"         
+#"rectal_bloodloss"   "change_bowel_habit" "grs"
+#same as in the full cohort i.e. we can assume the 6-variable IRM is appropriate for detecting left-sided CRC
+
+#however in right-sided CRC only the following variables are associated (both with increased CRC risk):
+#"sym_age"            "grs"
+
+#ROCAUCs:
+p_v_test_lr <- p_v_test$p_40_ve
+p_v_test_lr$left_sided_CRC[is.na(p_v_test_lr$left_sided_CRC)] <- 0
+sum(p_v_test_lr$left_sided_CRC[p_v_test_lr$left_sided_CRC == 1]) #62 cases
+#variable to differentiate between right-sided CRC, and any other participant (with CRC or not):
+p_v_test_lr$right_sided_CRC[is.na(p_v_test_lr$right_sided_CRC)] <- 0
+sum(p_v_test_lr$right_sided_CRC[p_v_test_lr$right_sided_CRC == 1]) #16 cases
+
+rocauc(left_sided_CRC~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit+sex, p_v_test_lr, pt=TRUE)
+#ROCAUC of the 6-variable IRM for left-sided CRC is 0.7475 (0.6954-0.7996)
+rocauc(right_sided_CRC~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit+sex, p_v_test_lr, pt=TRUE)
+#ROCAUC of the 6-variable IRM for right-sided CRC is 0.6306 (0.5703-0.6909)
+
+rocauc(right_sided_CRC~sym_age+grs, p_v_test_lr, pt=TRUE)
+#However, ROCAUC of the 2 variables associated with right-sided CRC (age and PRS) is improved 0.6984 (0.6455-0.7513)
+
+#12B (Miscellaneous) - colonoscopies
+#===================================
+#Find whether any participants in the cohort had a colonoscopy prior to symptom onset (in case this variable is predictive of CRC)
+#--------------------------------------------------------------------------------------------------------------------------------
+#look for read codes describing colonoscopy
+read2_colonoscopy <- lkp2$read_2[grep("colonoscopy",lkp2$term_description)]
+read2_colonoscopy <- read2_colonoscopy[!(read2_colonoscopy %in% c("68W23","8HU1."))]
+
+read3_colonoscopy <- lkp3$read_3[grep("colonoscopy",lkp3$term_description)]
+read3_colonoscopy <- read3_colonoscopy[!(read3_colonoscopy %in% c("XaCLl","8HU1."))]
+lkp3$term_description[lkp3$read_3 %in% read3_colonoscopy]
+
+reads <- c(read2_colonoscopy, read3_colonoscopy)
+reads <- reads[!duplicated(reads)]
+
+#OPCS codes describing colonoscopy:
+OPCS4 <- "H18.1"
+OPCS3 <- c("H2002","H2003")
+
+#get participant health records of colonoscopy, and add to participant dataframe:
+first_occurence_age2 <- function(ICD10='',GP='',OPCS='',cancer='',
+                                 lower_age_threshold=0, upper_age_threshold=150,
+                                 p=p_sym_filtered_00) {
+  ICD10_records=read_ICD10(ICD10)%>%mutate(date=epistart)%>%select(eid,date)%>%mutate(source='HES')
+  OPCS_records=read_OPCS(OPCS)%>%mutate(date=opdate)%>%select(eid,date)%>%mutate(source='OPCS')
+  GP_records=read_GP(GP)%>%mutate(date=event_dt)%>%select(eid,date)%>%mutate(source='GP')
+  cancer_records=read_cancer(cancer)%>%select(eid,date)%>%mutate(source='Cancer_Registry')
+  all_records=rbind(ICD10_records,OPCS_records)%>%rbind(GP_records)%>%rbind(cancer_records)%>%mutate(date=as.Date(date))
+  all_records=left_join(all_records,p[,c(1,2)])
+  all_records$crc_age=lubridate::time_length(difftime(all_records$date, all_records$dob), "years")
+  all_records=filter(all_records, (crc_age >= lower_age_threshold) & (crc_age < upper_age_threshold))
+  all_records=all_records%>%group_by(eid)%>%top_n(-1,date)%>%distinct()
+  return(all_records)
+}
+
+colonoscopies <- first_occurence_age2(OPCS=c("H2002","H2003","H18.1"),
+                                      GP=reads, p=p_40_ve)
+
+sum(colonoscopies$eid %in% p_40_ve$eid)
+colnames(colonoscopies)[2] <- "colonoscopy_date"
+
+p_40_ve <- left_join(p_40_ve, colonoscopies[,1:2])
+
+#check if patients had colonoscopy before symptom. If so we can assume colonoscopy was negative
+#since no CRC diagnoses pre symptom were included
+
+p_40_ve$colonoscopy_before_symptom <- rep(0, nrow(p_40_ve))
+p_40_ve$sym_date <- as.Date(p_40_ve$sym_date, format = "%Y-%m-%d")
+p_40_ve$colonoscopy_date <- as.Date(p_40_ve$colonoscopy_date, format = "%Y-%m-%d")
+
+p_40_ve$colonoscopy_time_diff <- lubridate::time_length(difftime(p_40_ve$colonoscopy_date, p_40_ve$sym_date), "days")
+p_40_ve$colonoscopy_before_symptom[p_40_ve$colonoscopy_time_diff < 0] <- 1
+sum(p_40_ve$colonoscopy_before_symptom, na.rm=T)
+#1568 participants had a colonoscopy prior to symptom onset 
+
+#do a logistic regression
+#OR
+round(exp(basemod$coefficients[2,1]),2) #0.71
+#L95
+round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2) #0.42
+#U95
+round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2) #1.21
+#p:
+signif(basemod$coefficients[2,4],2) #0.2 - non significant
+
+
+#check if controls had colonoscopy within 2 years of symptom (if so they are definitely true negatives)
+#-----------------------------------------------------------------------------------------------------
+p_40_ve$controls_colonoscopy_true_negative <- rep(NA,nrow(p_40_ve))
+p_40_ve$controls_colonoscopy_true_negative[p_40_ve$case == 0] <- 0
+p_40_ve$controls_colonoscopy_true_negative[p_40_ve$colonoscopy_time_diff > 0 & 
+                                             p_40_ve$colonoscopy_time_diff < (365.25*2)] <- 1
+sum(p_40_ve$controls_colonoscopy_true_negative, na.rm=T) #=3414
+#3,414 controls had a colonoscopy (but no diagnosis) within 2 years of index date, and are therefore more likely to be true negatives.
+#We decided not to restrict controls to only these individuals as it would drastically reduce control numbers from ~50,000 participants
+#Additionally, these were people already flagged as high-risk by the healthcare system, because they received a colonoscopy.
+#Basing our analysis on only these individuals wouldn't be an accurate representation of individuals accessing primary care,
+#and could reinforce existing biases in triage
+
+#12C (Miscellaneous) calculate how far away on average variable measurements are from index date (date of first symptom at age >=40)
+#===================================================================================================================================
+#import table of participants' UKBB recruitment dates and ages
+rd <- read.csv('00_recruitment_date.csv')
+#join recruitment dates and ages to cohort dataframes
+p_v_train <- lapply(p_v_train, function(x) left_join(x,rd))
+#there are now two 'recruitment age' variables in the cohort table. Sanity check that they are the same:
+for (i in 1:length(p_v_train)) {
+  #print cohort and number of participants for which it's not the same
+  print(names(p_v_train)[i])
+  print(sum(p_v_train[[i]]$recruitment_age != p_v_train[[i]]$p21003_i0))
+}
+#there is only 1 participant in the cohort whose recruitment ages do not match, maybe due to a data entry error
+#exclude the participant from further calculations
+
+for (i in 1:length(p_v_train)) {
+  #initialise column for time difference between index/symptom date and recruitment date
+  p_v_train[[i]]$recruitment_index_time_diff <- rep(NA, nrow(p_v_train[[i]]))
+  #calculate time difference while excluding aforementioned participant
+  x <- which(p_v_train[[i]]$recruitment_age != p_v_train[[i]]$p21003_i0)
+  p_v_train[[i]]$recruitment_index_time_diff[-x] <- lubridate::time_length(difftime(p_v_train[[i]]$sym_date[-x],
+                                                                          p_v_train[[i]]$p53_i0[-x]),
+                                                                 "days")
+  #convert negative numbers to positive (we're only interested in time difference, not direction)
+  p_v_train[[i]]$recruitment_index_time_diff <- sqrt(p_v_train[[i]]$recruitment_index_time_diff^2)
+}
+
+#histogram of difference between index date and recruitment date (many variables were recorded at index)
+hist(p_v_train$p_40_ve$recruitment_index_time_diff)
+                    
+#histogram not normally distributed, use median time difference:
+median(p_v_train$p_40_ve$recruitment_index_time_diff, na.rm=TRUE) #1603 days
+IQR(p_v_train$p_40_ve$recruitment_index_time_diff, na.rm=TRUE)
+median(p_v_train$p_40_ve$recruitment_index_time_diff, na.rm=TRUE)/30.4375 #which is a median of 52.66 months
+median(p_v_train$p_40_ve$recruitment_index_time_diff, na.rm=TRUE)/365.25 #or 4.39 years
+
+#also get mean and standard deviation of time difference between index date and recruitment, for all participants
+mean(p_v_train$p_40_ve$recruitment_index_time_diff, na.rm=TRUE)
+
+(((365/12)*3) + (366/12))/4 #mean number of days in a month including leap years = 30.4375
+mean(p_v_train$p_40_ve$recruitment_index_time_diff, na.rm=TRUE)/30.4375 #mean of 66.66 months
+mean(p_v_train$p_40_ve$recruitment_index_time_diff, na.rm=TRUE)/365.25 #or 5.55 years
+
