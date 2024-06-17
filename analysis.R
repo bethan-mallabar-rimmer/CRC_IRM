@@ -120,14 +120,12 @@ cbh <- c('25JA.','XaI94')
 rbl <- c('J68z0','J68z2','X30Be','XaFt2','XaIMX','XaJuu','XaJuv','XaYVt',
          ucl_codes_rb_filtered$code[!(ucl_codes_rb_filtered$code %in% sym_codes_filtered) &
                                       !duplicated(ucl_codes_rb_filtered$code)])
-#appetite change
+#appetite loss
 app <- 'Ua1iv'
 #haemoglobin levels
 haem <- 'XaBLm' 
 #weight loss
 wl <- c('XaIu3','XaIxC','XaJM4','XaKwR','XaXTs')
-#faecal occult blood test
-fob <- c('XaNxT','XaPke')
 
 #fill in symptom type dataframe
 #-------------------------------
@@ -136,7 +134,6 @@ not_disco_type$loss_appetite[not_disco_type$readcode %in% app] <- 1
 not_disco_type$abdo_mass[not_disco_type$readcode %in% abm] <- 1
 not_disco_type$abdo_pain[not_disco_type$readcode %in% abp] <- 1
 not_disco_type$rectal_bloodloss[not_disco_type$readcode %in% rbl] <- 1
-not_disco_type$fob[not_disco_type$readcode %in% fob] <- 1
 not_disco_type$change_bowel_habit[not_disco_type$readcode %in% cbh] <- 1
 not_disco_type$haemoglobin[not_disco_type$readcode %in% haem] <- 1
 not_disco_type$rigidity[not_disco_type$readcode %in% rig] <- 1
@@ -154,10 +151,6 @@ symptom_type <- rbind(symptom_type, dplyr::filter(not_disco_type, weightloss==1)
                       dplyr::filter(not_disco_type, abdo_pain==1),
                       dplyr::filter(disco_type, rectal_bloodloss==1),
                       dplyr::filter(not_disco_type, rectal_bloodloss==1),
-                      dplyr::filter(disco_type, fob==1),
-                      dplyr::filter(not_disco_type, fob==1),
-                      dplyr::filter(disco_type, fob==1),
-                      dplyr::filter(not_disco_type, fob==1),
                       dplyr::filter(disco_type, change_bowel_habit==1),
                       dplyr::filter(not_disco_type, change_bowel_habit==1),
                       dplyr::filter(disco_type, haemoglobin==1),
@@ -169,9 +162,10 @@ symptom_type <- symptom_type[!duplicated(symptom_type$readcode),]
 
 #remove rigidity (later in the study it was found hardly any participants had this symptom)
 #also remove one rigidity code accidentally typed as abdominal pain:
-symptom_type <- symptom_type[!(symptom_type$readcode %in% c('25F2.','25F..','25FZ.')),-11]
+symptom_type <- symptom_type[!(symptom_type$readcode %in% c('25F2.','25F..','25FZ.')),-10]
+sym_codes_filtered <- sym_codes_filtered[!(sym_codes_filtered$code %in% c('25F2.','25F..','25FZ.')),]
 
-#differentiate between unintentional and unspecified-whether-intentional weightloss:
+#differentiate between unintentional and unspecified-whether-unintentional weightloss:
 symptom_type$unintentional_weightloss <- NA
 symptom_type$unintentional_weightloss[symptom_type$readcode
                                       %in% c('1625.','1627.','1D1A.','2224.',
@@ -180,7 +174,7 @@ symptom_type$unintentional_weightloss[symptom_type$readcode
                                              'XaJM4','XaKwR','XaXTs')] <- 1
 symptom_type$other_weightloss <- NA
 symptom_type$other_weightloss[symptom_type$readcode %in% c('22A8.','XaIxC','1623.')] <- 1
-symptom_type <- symptom_type[,c(1:2,11:12,3:10)] #reorder columns
+symptom_type <- symptom_type[,c(1:2,10:11,3:9)] #reorder columns
 
 #2A. Find UKBB participants with symptoms
 #=======================================
@@ -239,6 +233,8 @@ p_sym$sym_age <- lubridate::time_length(difftime(p_sym$event_dt,
                                         "years")
 p_sym$sym_age <- as.integer(p_sym$sym_age)  
 
+#For analysis of whole cohort, include any symptoms occurring after age 40 or 50:
+#===============================================================================
 #version 1: exclude symptoms which occurred before participants were 50:
 p_sym_50 <- p_sym[p_sym$sym_age >= 50,]
 #version 2: exclude symptoms which occurred before participants were 40:
@@ -268,25 +264,94 @@ p_sym_filtered_50 <- get_earliest_symptom(p_sym_50) #age threshold for earliest 
 #================================================================
 #get read 2/3 codes and descriptions for CRC
 crc_codes_gp <- find_read_codes(c('B13','B14','B575','B1z','B803','B804','B902','BB5N'))
-crc_codes_gp_filtered <- crc_codes_gp[! crc_codes_gp$code %in% c('B1z..','B1z0.','B1zy.','B1zz.','B902.','B9020','B902z'),]
+#exclude irrelevant codes (e.g. non cancer, or cancer of anus/anal canal or appendix)
+crc_codes_gp_filtered <- crc_codes_gp[! crc_codes_gp$code %in% c('B1z..','B1z0.','B1zy.','B1zz.',
+                                                                 'B902.','B9020','B902z',
+                                                                 'B143.','BB5N2','B135.',
+                                                                 'BB5Nz','BB5N.','BB5N0',
+                                                                 'B9025','B142.','XaZfN',
+                                                                 'XaFsw'),]
 
 #list ICD10 cancer registry codes for CRC
-crc_codes_icd10_filtered <- c('C18','C19','C20','C21')
+#excluding cancers of appendix (C18.1) and anus/anal canal (C21)
+crc_codes_icd10_filtered <- c('C18.0','C18.2','C18.3','C18.4',
+                              'C18.5','C18.6','C18.7','C18.8',
+                              'C18.9','C19','C20')
 
 #find earliest occurrence of CRC for each patient
 #below function adapted from Harry Green's function first_occurence
 first_occurence_age <- function(ICD10='',GP='',OPCS='',cancer='',
                                 lower_age_threshold=0, upper_age_threshold=150,
-                                p=p_sym_filtered_00) {
-  ICD10_records=read_ICD10(ICD10)%>%mutate(date=epistart)%>%select(eid,date)%>%mutate(source='HES')
-  OPCS_records=read_OPCS(OPCS)%>%mutate(date=opdate)%>%select(eid,date)%>%mutate(source='OPCS')
-  GP_records=read_GP(GP)%>%mutate(date=event_dt)%>%select(eid,date)%>%mutate(source='GP')
-  cancer_records=read_cancer(cancer)%>%select(eid,date)%>%mutate(source='Cancer_Registry')
-  all_records=rbind(ICD10_records,OPCS_records)%>%rbind(GP_records)%>%rbind(cancer_records)%>%mutate(date=as.Date(date))
-  all_records=left_join(all_records,p[,c(1,9)])
-  all_records$crc_age=lubridate::time_length(difftime(all_records$date, all_records$dob), "years")
-  all_records=filter(all_records, (crc_age >= lower_age_threshold) & (crc_age < upper_age_threshold))
-  all_records=all_records%>%group_by(eid)%>%top_n(-1,date)%>%distinct()
+                                p=p_sym_filtered_00, read_lkp2 = lkp2,
+                                read_lkp3 = lkp3) {
+  #ICD10
+  ICD10_records=read_ICD10(ICD10) %>% mutate(date=epistart) %>% select(eid,date,diag_icd10) %>% 
+    mutate(source='HES') %>% rename('diagnosis'=diag_icd10)
+  #OPCS
+  OPCS_records=read_OPCS(OPCS) %>% mutate(date=opdate) %>% select(eid,date) %>% mutate(source='OPCS')
+  #GP
+  GP_records=read_GP(GP) %>% mutate(date=event_dt) %>% select(eid,date,read_2,read_3) %>% mutate(source='GP')
+  #for GP, combine read 2 and 3 codes and add descriptions
+  GP_records$read_2[GP_records$read_2==""] <- GP_records$read_3[GP_records$read_2==""]
+  GP_records <- GP_records %>% select(eid,date,read_2,source) %>% rename('diagnosis'=read_2)
+  #get read descriptions:
+  read_descriptions <- data.frame(rc = unique(GP_records$diagnosis), rd=rep(NA,length(unique(GP_records$diagnosis))))
+  for (i in 1:nrow(read_descriptions)) {
+    if (sum(read_descriptions$rc[i] %in% lkp3$read_3) > 0) {
+      read_descriptions$rd[i] <- lkp3$term_description[lkp3$read_3 == read_descriptions$rc[i]]
+    }
+    if (sum(read_descriptions$rc[i] %in% lkp2$read_2) > 0) {
+      read_descriptions$rd[i] <- lkp2$term_description[lkp2$read_2 == read_descriptions$rc[i]]
+    }
+  }
+  #add to GP 'diagnosis' column
+  for (i in 1:nrow(GP_records)) {
+    GP_records$diagnosis[i] <- paste(GP_records$diagnosis[i], read_descriptions$rd[read_descriptions$rc == GP_records$diagnosis[i]])
+  }
+  #Cancer Registry
+  cancer_records = read_cancer(cancer) %>% select(eid,date,cancer) %>% mutate(source='Cancer_Registry') %>% rename('diagnosis'=cancer)
+  #Join everything together:
+  all_records = rbind(ICD10_records,OPCS_records) %>% rbind(GP_records) %>% rbind(cancer_records) %>% mutate(date=as.Date(date))
+  all_records = left_join(all_records,p[,c(1,9)])
+  all_records$crc_age = lubridate::time_length(difftime(all_records$date, all_records$dob), "years")
+  all_records = filter(all_records, (crc_age >= lower_age_threshold) & (crc_age < upper_age_threshold))
+  all_records = all_records %>% group_by(eid) %>% top_n(-1,date) %>% ungroup() %>% distinct()
+  #some of these patient IDs are duplicated due to being diagnosed with more than
+  #1 cancer on the same day, or having multiple diagnoses from different sources
+  #maximum number of multiple diagnoses is 4
+  #therefore add 3 extra columns, so each diagnosis and source is in a separate column:
+  all_records <- data.frame(eid = all_records$eid, date = all_records$date,
+                            diagnosis_1 = all_records$diagnosis,
+                            diagnosis_2 = rep("",nrow(all_records)),
+                            diagnosis_3 = rep("",nrow(all_records)),
+                            diagnosis_4 = rep("",nrow(all_records)),
+                            source_1 = all_records$source,
+                            source_2 = rep("",nrow(all_records)),
+                            source_3 = rep("",nrow(all_records)),
+                            source_4 = rep("",nrow(all_records)),
+                            crc_age = all_records$crc_age)
+  duplicated_ids <- all_records$eid[duplicated(all_records$eid)]
+  for (i in 1:length(duplicated_ids)) {
+    if (sum(all_records$eid == duplicated_ids[i]) >= 2) {
+      all_records$diagnosis_2[all_records$eid == duplicated_ids[i]][1] <- all_records$diagnosis_1[all_records$eid == duplicated_ids[i]][2]
+      all_records$source_2[all_records$eid == duplicated_ids[i]][1] <- all_records$source_1[all_records$eid == duplicated_ids[i]][2]
+    }
+    if (sum(all_records$eid == duplicated_ids[i]) >= 3) {
+      all_records$diagnosis_3[all_records$eid == duplicated_ids[i]][1] <- all_records$diagnosis_1[all_records$eid == duplicated_ids[i]][3]
+      all_records$source_3[all_records$eid == duplicated_ids[i]][1] <- all_records$source_1[all_records$eid == duplicated_ids[i]][3]
+    }
+    if (sum(all_records$eid == duplicated_ids[i]) == 4) {
+      all_records$diagnosis_4[all_records$eid == duplicated_ids[i]][1] <- all_records$diagnosis_1[all_records$eid == duplicated_ids[i]][4]
+      all_records$source_4[all_records$eid == duplicated_ids[i]][1] <- all_records$source_1[all_records$eid == duplicated_ids[i]][4]
+    }
+    if (sum(all_records$eid == duplicated_ids[i]) > 4) {
+      print("> 4 duplications! Something went wrong")
+    }
+  }
+  #now the first record for each patient should contain details of all
+  #diagnoses that occurred on the same day.
+  #select only the first record:
+  all_records <- distinct(all_records, eid, .keep_all=TRUE)
   return(all_records)
 }
 
@@ -303,6 +368,10 @@ crc_50 <- first_occurence_age(ICD10 = crc_codes_icd10_filtered,
                               cancer = crc_codes_icd10_filtered,
                               lower_age_threshold = 50,
                               p = p_sym_filtered_50)
+
+length(unique(crc_00$eid)) == nrow(crc_00) #= TRUE i.e. no duplicated records
+length(unique(crc_40$eid)) == nrow(crc_40) #= TRUE i.e. no duplicated records
+length(unique(crc_50$eid)) == nrow(crc_50) #= TRUE i.e. no duplicated records
 
 #3B. Add crc data to participants table
 #======================================
