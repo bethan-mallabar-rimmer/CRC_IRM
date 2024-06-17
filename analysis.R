@@ -586,13 +586,13 @@ nrow(p_40[(p_40$eid %in% crc_h_eid$eid) & (p_40$case == '0'),]) #29 controls
 #remove participants diagnosed with hereditary CRC syndromes from cohort:
 p_40 <- p_40[!(p_40$eid %in% crc_h_eid$eid),]
 
-#4A. exclude participants who are neither cases nor controls (i.e. don't meet study inclusion criteria)
+#4B. exclude participants which are neither cases nor controls (i.e. don't meet study inclusion criteria)
 #=================================================================================================
 #p_00_v <- p_00 %>% filter(!(case == 'exclude'))
 p_40_v <- p_40 %>% filter(!(case == 'exclude'))
 #p_50_v <- p_50 %>% filter(!(case == 'exclude'))
 
-#4B. Add UKBB variables
+#4C. Add UKBB variables
 #=====================
 #import some tables of UKBB variables for all UKBB participants:
 var <- read.csv('00_participant_variables.csv') #UKBB variables
@@ -600,6 +600,7 @@ fh <- read.csv('00_participant_FH.csv') #family history (the only reason it's in
                                         #in the analysis at a later date)
 
 #list of UKBB variable names/codes in the table vs. what they were renamed to, for reference:
+#list of UKBB variable names/codes in the table vs. what I renamed them, for reference:
 UKBB_var_names <- list('eid' = 'eid',
                        'age' = 'p21022',
                        'dob_m' = "p52",
@@ -650,12 +651,12 @@ add_variables <- function(p_xx) {
 
 p_40_v <- add_variables(p_40_v)
 
-#4C. Add family history
+#4D. Add family history
 #=====================
 add_fh <- function(fh, p_xx_v) {
   fh_temp <- filter(fh, eid %in% p_xx_v$eid)
   colnames(fh_temp) <- c('eid','fh_mat','fh_pat')
-  #UKBB self-reported family history is formatted as a list of conditions which participants said their parent had. Use grep to find entries containing bowel cancer:
+  #UKBB family history is formatted as a list of conditions which participants self-reported their parent/s had. Use grep to find entries containing bowel cancer:
   fh_temp$fh_mat[grep('Bowel cancer', fh_temp$fh_mat)] <- 1
   fh_temp$fh_pat[grep('Bowel cancer', fh_temp$fh_pat)] <- 1
   fh_temp[,2:3][fh_temp[,2:3] != 1] <- 0 #if participant did not report mother or father having bowel cancer, set value to 0
@@ -665,20 +666,20 @@ add_fh <- function(fh, p_xx_v) {
   p$fh_mat<- as.integer(p$fh_mat)
   p$fh_pat<- as.integer(p$fh_pat)
   
-  #new variable which is 0 if no parents had bowel cancer, or 1, or 2:
+  #new variable which is 0 if no parents had bowel cancer, 1 if only one parent had bowel cancer, or 2 if both:
   p$fh <- p$fh_mat + p$fh_pat
   
   return(p)
 }
 
 p_40_v <- add_fh(fh, p_40_v)
-#remove some duplicates (not sure where they came from)
-p_40_v <- p_40_v[!duplicated(p_40_v$eid),]
 
-#4D. Add which symptom type each participant had
+#4E. Add which symptom type each participant had
 #==========================================
-#symptom_type is a dataframe with the category that each read code falls into
-#it's either 1 or NA for each category. change it to 1 or 0, then convert to an integer, so it can be used for maths later:
+#symptom_type is a dataframe: row names contain read codes and column names contain the symptom category each read code falls
+#into (e.g. abdominal pain, weight loss).
+#read codes have a value of either 1 or NA for each category. change it to 1 or 0, then convert to an integer, so it can be
+#used for maths later:
 symptom_type[,-1] <- sapply(symptom_type[,-1], function(x) as.integer(x))
 symptom_type[is.na(symptom_type)] <- 0
 
@@ -703,20 +704,23 @@ add_symptoms <- function(p_xx_v, p_sym_filtered_xx) {
   p_st <- rbind(p_st2, p_st3) #add read 3 codes table after read 2 codes table
   p_st <- p_st %>% 
     group_by(eid) %>% #for each participant
-    summarise(across(2:12, sum)) #sum total number of times each symptom was recorded
+    summarise(across(2:11, sum)) #sum total number of times each symptom was recorded
   
-  #if any value in the symptom columns is >1, convert it to 1
-  #(don't need to know how many times one symptom type, e.g. weight loss, was
-  #recorded for one participant, just that it was recorded)
+  #if any value in the symptom columns is >1 (meaning this symptom was recorded more than once
+  #for the participant), convert it to 1. We don't need to know how many times one symptom,
+  #e.g. rectal bleeding, was recorded, just that it was.
   p <- left_join(p_xx_v, p_st)
-  p[,31:42][p[,31:42] > 1] <- 1
-  p[,31:42][is.na(p[,31:42])] <- 0
+  sym_start <- which(colnames(p) == "weightloss")
+  sym_end <- ncol(p)
+  p[,sym_start:sym_end][p[,sym_start:sym_end] > 1] <- 1
+  p[,sym_start:sym_end][is.na(p[,sym_start:sym_end])] <- 0
   
-  return(p)}
+  return(p)
+}
 
 p_40_v <- add_symptoms(p_40_v,p_sym_filtered_40)
 
-#4D. Add haemoglobin levels
+#4F. Add haemoglobin levels
 #==========================
 haem <- read_GP(c('44TC.','XaBLm'))
 haem$value1 <- as.numeric(haem$value1)
@@ -725,7 +729,7 @@ haem <- filter(haem, !is.na(value1))
 
 add_haem <- function(p_xx_v) {
   p <- p_xx_v %>%
-    left_join(haem[,c(1,3,6)]) %>%
+    left_join(haem[,colnames(haem) %in% c('eid','event_dt','value1') == TRUE]) %>%
     rename('haem_level'=value1, 'haem_date'=event_dt)
   
   #calculate time difference between haemoglobin measurement and first symptom:
@@ -737,24 +741,103 @@ add_haem <- function(p_xx_v) {
   #to symptom date (also remove some duplicated records that somehow snuck in here)
   p$haem_diff[is.na(p$haem_diff)] <- 0
   p <- p %>% group_by(eid) %>% top_n(-1, haem_diff) %>%
-    distinct(across(-crc_source), .keep_all = TRUE) %>% select(!(haem_diff))
+    distinct(.keep_all = TRUE)
   
   return(p)
 }
 
 p_40_v <- add_haem(p_40_v)
+mean(p_40_v$haem_diff[!is.na(p_40_v$haem_date)], na.rm=TRUE) #=574
+#i.e. these haemoglobin measurements were taken an average of 574 days away from first symptom (1.57 years)
+sum(!is.na(p_40_v$haem_level))
+#88 participants had a haemoglobin measurement
 
-#NOTE: these haemoglobin measurements were taken an average of 1153.952
-#days away from first symptom (3 years). therefore doing something sensible like only
-#including haemoglobin levels measured 2 years of either side of symptom date reduces
-#participants with haemoglobin levels to only 2 participants.
-#Even with this there were so few haemoglobin measurements that they couldn't be meaningfully analysed with logistic regression
+#4G. Add faecal occult blood test (within 8 weeks of symptom) as a variable
+#==========================================================================
+#This was in response to a reviewer request, to know whether faecal occult blood test result
+#near symptoms was predictive of CRC - however there were only 22 participants with a positive
+#FOB test within 8 weeks of symptom, 90 participants with a negative FOB test and 50,275 with
+#no FOB test at all. This variable was therefore too underpowered for logistic regression.
 
-#4E. reorder columns
-#==================
-p_40_v <- p_40_v[,c(1,2,14,15,13,3:12,16:23,44,43,29:31,32:42,24:28)]
+add_fob_date <- function(fob_codes, p_xx_v) {
+  sym_date <- p_xx_v[,colnames(p_xx_v) %in% c('eid','sym_date')]
+  gp <- read_GP(fob_codes)
+  gp <- gp[gp$eid %in% p_xx_v$eid,]
+  gp <- gp[,colnames(gp) %in% c('eid','event_dt')]
+  fob_date <- left_join(sym_date,gp)
+  fob_date$time_diff <- lubridate::time_length(difftime(fob_date$event_dt, fob_date$sym_date),"days")
+  fob_date <- na.omit(fob_date[fob_date$time_diff >= 0 & fob_date$time_diff < 57,])
+  return(fob_date)
+}
 
-#4F. Convert some categorical variables to factor variables
+fob_positive <- c('4794.','4793.','4796.','686B.','XaNxT','XaPke')
+fob_negative <- c('4792.','4795.','XaNxS')
+
+fob_date_positive <- add_fob_date(fob_positive, p_40_v)
+fob_date_negative <- add_fob_date(fob_negative, p_40_v)
+
+p_40_v$fob_8weeks <- rep(NA, nrow(p_40_v))
+p_40_v$fob_8weeks[p_40_v$eid %in% fob_date_positive$eid] <- 1
+p_40_v$fob_8weeks[p_40_v$eid %in% fob_date_negative$eid] <- 0
+
+#4H. Add info on whether CRC is left or right sided
+#===================================================
+#There are separate variable columns for left and right side in case someone has both
+
+#get a list of all diagnoses:
+unique(c(p_40_v$diagnosis_1, p_40_v$diagnosis_2, p_40_v$diagnosis_3, p_40_v$diagnosis_4))
+
+#left for descending, sigmoid and rectum, splenic flexure
+left <- c("C20 Malignant neoplasm of rectum","C18.7 Sigmoid colon","C18.6 Descending colon",
+          "C19 Malignant neoplasm of rectosigmoid junction","C18.5 Splenic flexure",
+          "B133. Malignant neoplasm of sigmoid colon","B8033 Carcinoma in situ of sigmoid colon",
+          "B132. Malignant neoplasm of descending colon","B141. Malignant neoplasm of rectum",
+          "B14.. Malignant neoplasm of rectum","B8041 Carcinoma in situ of rectum",
+          "B140. Malignant neoplasm of rectosigmoid junction",
+          "B8040 Carcinoma in situ of rectosigmoid junction",
+          "B137. Malignant neoplasm of splenic flexure of colon")
+#right for cecum and ascending colon, hepatic flexure
+right <- c("C18.0 Caecum","C18.2 Ascending colon","C18.3 Hepatic flexure",
+           "B130. Malignant neoplasm of hepatic flexure of colon",
+           "B134. Malignant neoplasm of caecum","B136. Malignant neoplasm of ascending colon")
+#unsure for transverse colon or unspecified
+unsure <- c("C18.4 Transverse colon","B13.. Malignant neoplasm of colon","C18.9 Colon, unspecified",
+            "B13z. Malignant neoplasm of colon NOS","B131. Malignant neoplasm of transverse colon",
+            "B803z Carcinoma in situ of colon NOS","C18.8 Overlapping lesion of colon",
+            "B803. Carcinoma in situ of colon")
+
+p_40_v$left_sided_CRC <- rep(NA,nrow(p_40_v))
+p_40_v$right_sided_CRC <- rep(NA,nrow(p_40_v))
+
+#record diagnoses which are neither right nor left first, then replace with any left or right diagnoses.
+#this way, if a patient has e.g. "Colon, unspecified" in Cancer Registry, but ""B14.. Malignant neoplasm of rectum"
+#in their GP record, the more specific diagnosis will take precedence and the cancer would be recorded as
+#left sided
+
+#add unsure if right or left diagnoses:
+p_40_v$left_sided_CRC[(p_40_v$case == 1) & ((p_40_v$diagnosis_1 %in% unsure) | 
+                                              (p_40_v$diagnosis_2 %in% unsure) |
+                                              (p_40_v$diagnosis_3 %in% unsure) |
+                                              (p_40_v$diagnosis_4 %in% unsure))] <- 0
+p_40_v$right_sided_CRC[(p_40_v$case == 1) & ((p_40_v$diagnosis_1 %in% unsure) | 
+                                               (p_40_v$diagnosis_2 %in% unsure) |
+                                               (p_40_v$diagnosis_3 %in% unsure) |
+                                               (p_40_v$diagnosis_4 %in% unsure))] <- 0
+#add left sided diagnoses:
+p_40_v$left_sided_CRC[(p_40_v$case == 1) & ((p_40_v$diagnosis_1 %in% left) | 
+                                              (p_40_v$diagnosis_2 %in% left) |
+                                              (p_40_v$diagnosis_3 %in% left) |
+                                              (p_40_v$diagnosis_4 %in% left))] <- 1
+p_40_v$left_sided_CRC[(p_40_v$case == 1) & is.na(p_40_v$left_sided_CRC)] <- 0
+
+#add right sided diagnoses:
+p_40_v$right_sided_CRC[(p_40_v$case == 1) & ((p_40_v$diagnosis_1 %in% right) | 
+                                               (p_40_v$diagnosis_2 %in% right) |
+                                               (p_40_v$diagnosis_3 %in% right) |
+                                               (p_40_v$diagnosis_4 %in% right))] <- 1
+p_40_v$right_sided_CRC[(p_40_v$case == 1) & is.na(p_40_v$right_sided_CRC)] <- 0
+
+#4I. Convert some categorical variables to factor variables
 #========================================================
 factorise <- function(p_xx_v) {
   p <- p_xx_v
