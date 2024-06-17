@@ -862,59 +862,36 @@ factorise <- function(p_xx_v) {
 
 p_40_v <- factorise(p_40_v)
 
-#5. Split cohort by ancestry, age, and sex
-#==========================================
+#5. Filter cohort by ancestry and relatedness
+#============================================
 #whole cohort:
-afr <- read.table('AFR_8k_subject_list_unrelated.txt', header = TRUE) #list of unrelated African ancestry participants
-eur <- read.table('EUR_451k_subject_list_unrelated.txt', header = TRUE) #list of unrelated European ancestry participants
-sas <- read.table('SAS_10k_subject_list_unrelated.txt', header = TRUE) #list of unrelated South Asian ancestry participants
-eas <- read.table('EAS_2482_subject_list_unrelated.txt', header = TRUE) #list of unrelated East Asian ancestry participants
-amr <- read.table('AMR_468_subject_list_unrelated.txt', header = TRUE) #list of unrelated Admixed American ancestry participants
+system('dx download file-GZ4g538JZ8kXGjqJbQpKq3p5') #list of unrelated African ancestry participants
+afr <- read.table('AFR_8k_subject_list_unrelated.txt', header = TRUE)
+system('dx download file-GZ4g560JZ8kgq110Y6B24Yp7') #list of unrelated European ancestry participants
+eur <- read.table('EUR_451k_subject_list_unrelated.txt', header = TRUE)
+system('dx download file-GZ4g570JZ8kjZ674gy7p30F6') #list of unrelated South Asian ancestry participants
+sas <- read.table('SAS_10k_subject_list_unrelated.txt', header = TRUE)
+system('dx download file-GZ4g550JZ8kyfffjfG1fV9z7') #list of unrelated East Asian ancestry participants
+eas <- read.table('EAS_2482_subject_list_unrelated.txt', header = TRUE)
+system('dx download file-GZ4g54QJZ8ky3pXV7kvJ29Vb') #list of unrelated Admixed American ancestry participants
+amr <- read.table('AMR_468_subject_list_unrelated.txt', header = TRUE)
 
 #splitting by ancestry:
-p_40_va <- filter(p_40_v, eid %in% afr$n_eid) #AFR: 7 cases in cohort
-p_40_ve <- filter(p_40_v, eid %in% eur$n_eid) #EUR: 625 cases
-p_40_vs <- filter(p_40_v, eid %in% sas$n_eid) #SAS: 5 cases
-p_40_veas <- filter(p_40_v, eid %in% eas$n_eid) #EAS: 0 controls or cases
-p_40_vamr <- filter(p_40_v, eid %in% amr$n_eid) #AMR: 0 controls or cases
-
-#the analysis can only be run in participants with European ancestry due to
-#insufficient sample size
-#split the European cohort for sensitivity analyses:
-#age
-p_4049_ve <- filter(p_40_ve, sym_age >= 40 & sym_age <50) #40-49: 55 cases
-p_5059_ve <- filter(p_40_ve, sym_age >= 50 & sym_age <60) #50-59: 180 cases
-p_6069_ve <- filter(p_40_ve, sym_age >= 60 & sym_age <70) #60-69: 300 cases
-p_7079_ve <- filter(p_40_ve, sym_age >= 70) #70-79: 90 cases
-
-#sex
-p_40f_ve <- filter(p_40_ve, sex == "Female") #female all ages: 257 cases
-p_40m_ve <- filter(p_40_ve, sex == "Male") #male all ages: 368 cases
-
-#age and sex
-p_4049f_ve <- filter(p_4049_ve, sex == "Female") #female 40-49: 32 cases
-p_4049m_ve <- filter(p_4049_ve, sex == "Male") #male 40-49: 23 cases
-
-p_5059f_ve <- filter(p_5059_ve, sex == "Female") #female 50-59: 83 cases
-p_5059m_ve <- filter(p_5059_ve, sex == "Male") #male 50-59: 97 cases
-
-p_6069f_ve <- filter(p_6069_ve, sex == "Female") #female 60-69: 115 cases
-p_6069m_ve <- filter(p_6069_ve, sex == "Male") #male 60-69: 185 cases
-
-p_7079f_ve <- filter(p_7079_ve, sex == "Female") #female 70-79: 27 cases
-p_7079m_ve <- filter(p_7079_ve, sex == "Male") #male 70-79: 63 cases
-
-
-#put all data frames in a list
-#=============================
-p_v <- list(p_40_ve, p_4049_ve, p_5059_ve, p_6069_ve, p_7079_ve,
-            p_40f_ve, p_40m_ve,
-            p_4049f_ve, p_4049m_ve, p_5059f_ve, p_5059m_ve,
-            p_6069f_ve, p_6069m_ve, p_7079f_ve, p_7079m_ve)
-names(p_v) <- c('p_40_ve', 'p_4049_ve', 'p_5059_ve', 'p_6069_ve', 'p_7079_ve',
-                'p_40f_ve', 'p_40m_ve',
-                'p_4049f_ve', 'p_4049m_ve', 'p_5059f_ve', 'p_5059m_ve',
-                'p_6069f_ve', 'p_6069m_ve', 'p_7079f_ve', 'p_7079m_ve')
+p_40_va <- filter(p_40_v, eid %in% afr$n_eid)
+sum(p_40_va$case == 1) #AFR: 5 cases
+sum(p_40_va$case == 0) #748 controls
+p_40_ve <- filter(p_40_v, eid %in% eur$n_eid)
+sum(p_40_ve$case == 1) #EUR: 438 cases - 0.88% case ratio
+sum(p_40_ve$case == 0) #49949 controls 
+p_40_vs <- filter(p_40_v, eid %in% sas$n_eid)
+sum(p_40_vs$case == 1) #SAS: 3 cases
+sum(p_40_vs$case == 0) #1427 controls
+p_40_veas <- filter(p_40_v, eid %in% eas$n_eid) 
+sum(p_40_veas$case == 1) #EAS: 0 controls or cases
+sum(p_40_veas$case == 0)
+p_40_vamr <- filter(p_40_v, eid %in% amr$n_eid) 
+sum(p_40_vamr$case == 1) #AMR: 0 controls or cases
+sum(p_40_vamr$case == 0)
 
 #6A. Generate polygenic risk score (PRS) (in this code the nomenclature used was genetic risk score (GRS))
 #====================================
