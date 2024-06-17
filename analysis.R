@@ -400,24 +400,66 @@ death_cause_50 <- filter(death_cause, eid %in% p_sym_filtered_50$eid)
 #a function to add all the CRC data about participants to a dataframe 'p':
 add_crc <- function(p_sym_filtered_xx, crc_xx, death_cause_xx) { 
   #create a table including id, DoB, symptom date and symptom age:
-  p <- p_sym_filtered_xx[,c(1,9,3,10)]
+  p <- p_sym_filtered_xx[,colnames(p_sym_filtered_xx) %in% c("eid",
+                                                             "dob",
+                                                             "event_dt",
+                                                             "sym_age" ) == TRUE]
   
   #add CRC date, source of info (e.g. GP, cancer registry) and age at diagnosis, and rename some stuff:
   p <- left_join(p, crc_xx) %>% rename('sym_date' = event_dt,
                                        'crc_date' = date,
-                                       'crc_source' = source)
+                                       'crc_source_1' = source_1,
+                                       'crc_source_2' = source_2,
+                                       'crc_source_3' = source_3,
+                                       'crc_source_4' = source_4)
+  
+  #list of participants with death cause being CRC (ICD10 code of C18, C19, or C20, excluding appendix cancers).
+  icd10_death_eid <- death_cause_xx$eid[(death_cause_xx$code %in% unique(substr(crc_codes_icd10_filtered,1,3))) &
+                                          (death_cause_xx$cause != "Appendix")]
   
   #add whether participants had CRC listed as cause of death:
-  p$crc_death[p$eid %in% death_cause_xx$eid[death_cause_xx$code %in% crc_codes_icd10_filtered]] <- 1
+  p$crc_death[p$eid %in% icd10_death_eid] <- 1
   p$crc_death[is.na(p$crc_death)] <- 0
+  
   #add date and age of death for all participants
-  p <- left_join(p, death_cause_xx[,c(2,9)]) %>% rename('death_date' = date_of_death)
+  p <- left_join(p, death_cause_xx[,colnames(death_cause_xx) %in% 
+                                     c('eid','date_of_death') == TRUE]) %>% rename('death_date' = date_of_death)
   p$death_age <- lubridate::time_length(difftime(p$death_date,p$dob),"years")
-  #if participants died from CRC but there is no other record of having CRC, fill in CRC date and age with death date and age:
+  
+  #if participants had CRC listed as a cause of death, but no other diagnosis of CRC
+  #in health records, fill in CRC date and age with death date and age:
   cdo <- p$eid[p$crc_death == 1 & is.na(p$crc_date)]
   p$crc_date[p$eid %in% cdo] <- p$death_date[p$eid %in% cdo]
-  p$crc_source[p$eid %in% cdo] <- 'Death'
   p$crc_age[p$eid %in% cdo] <- p$death_age[p$eid %in% cdo]
+  
+  #add info on diagnosis
+  icd10_death_crc_diagnosis <- death_cause_xx[(death_cause_xx$eid %in% cdo) & (death_cause_xx$code %in% c("C18","C19","C20")),]
+  for (i in 1:length(cdo)) {
+    p$diagnosis_1[p$eid %in% cdo[i]] <- icd10_death_crc_diagnosis$cause_icd10[icd10_death_crc_diagnosis$eid == cdo[i]][1]
+    p$crc_source_1[p$eid %in% cdo[i]] <- 'Death'
+    #if participant has two or more death records relating to CRC, record both:
+    if (sum(icd10_death_crc_diagnosis$eid == cdo[i]) >= 2) {
+      p$diagnosis_2[p$eid %in% cdo[i]] <- icd10_death_crc_diagnosis$cause_icd10[icd10_death_crc_diagnosis$eid == cdo[i]][2]
+      p$crc_source_2[p$eid %in% cdo[i]] <- 'Death'
+    }
+    #if participant has three or more death records relating to CRC, record all three:
+    if (sum(icd10_death_crc_diagnosis$eid == cdo[i]) >= 3) {
+      p$diagnosis_3[p$eid %in% cdo[i]] <- icd10_death_crc_diagnosis$cause_icd10[icd10_death_crc_diagnosis$eid == cdo[i]][3]
+      p$crc_source_3[p$eid %in% cdo[i]] <- 'Death'
+    }
+    #same if a participant has four or more:
+    if (sum(icd10_death_crc_diagnosis$eid == cdo[i]) == 4) {
+      p$diagnosis_4[p$eid %in% cdo[i]] <- icd10_death_crc_diagnosis$cause_icd10[icd10_death_crc_diagnosis$eid == cdo[i]][4]
+      p$crc_source_4[p$eid %in% cdo[i]] <- 'Death'
+    }
+    #four is the maximum number of records which this code records (because the most CRC diagnoses
+    #a participant had from GP, hospital, and cancer registry records was 4). As it's probably very
+    #unlikely for a participant to have >4 death records relating to CRC, print a message
+    if (sum(icd10_death_crc_diagnosis$eid == cdo[i]) > 4) {
+      print(paste('participant',cdo[i],'had >4 death records with CRC as a cause. This may be due
+                  to an error.'))
+    }
+  }
   
   #calculate time between first symptom and CRC in days:
   p$time_diff <- lubridate::time_length(difftime(p$crc_date, p$sym_date),"days")
@@ -431,9 +473,22 @@ add_crc <- function(p_sym_filtered_xx, crc_xx, death_cause_xx) {
   p$case[p$time_diff <= 0] <- 'exclude' #exclude
   p$case[p$time_diff_death <= 730 & p$crc_death == 0] <- 'exclude'
   
+  #test a 5 year cutoff rather than a 2 year cutoff for determining cases (this was in response to reviewer comments)
+  p$case_5years <- p$case
+  p$case_5years[p$case_5years == 0 & p$time_diff > 0 & p$time_diff <= (365.25*5)] <- '1'
+  p$case_5years[p$time_diff_death <= (365.25*5) & p$crc_death == 0] <- 'exclude'
+  
+  #test a 10 year cutoff rather than a 2 year cutoff for determining cases (in response to reviewers)
+  p$case_10years <- p$case
+  p$case_10years[p$case_10years == 0 & p$time_diff > 0 & p$time_diff <= (365.25*10)] <- '1'
+  p$case_10years[p$time_diff_death <= (365.25*10) & p$crc_death == 0] <- 'exclude'
+  
   #reformat some stuff
   p$crc_age <- as.integer(p$crc_age)
   p$death_age <- as.integer(p$death_age)
+  
+  #remove duplicates
+  p <- p[!duplicated(p$eid),]
   
   return(p)
 }
