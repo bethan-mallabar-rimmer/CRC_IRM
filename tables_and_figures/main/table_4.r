@@ -9,8 +9,8 @@
 library('pROC')
 library('dplyr')
 
-#Epi tests function
-#==================
+#Adapted versions of functions epiR::epi.tests and binom::binom.confint
+#=======================================================================
 epi.tests=function (dat, method = "exact", digits = 2, conf.level = 0.95) 
 {
   if (digits != 2 & digits != 3 & digits != 4) 
