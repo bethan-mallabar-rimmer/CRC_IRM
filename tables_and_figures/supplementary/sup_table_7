@@ -1,224 +1,257 @@
 #required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
-#p_v from Section 6
-#rocauc_irm from Section 8
-#aic_models from Section 9
+#p_v_train and p_v_test from Section 7
+#rocauc_irm_train from Section 9
+#aic_models_train from Section 10
 
 #table comparing best integrated risk models according to ROCAUC and AIC
 #======================================================================
 #install.packages("pROC")
+#install.packages('AICcmodavg')
+#install.packages("stringr")
+
 library(pROC)
-rocauc=function(form,dataframe,pt){
-  logit <- glm(form, data = dataframe, family = "binomial")
-  prob = predict(logit, newdata = dataframe, type = "response")
-  if (pt == TRUE) {
-    roc = roc(dataframe$case ~ prob, plot = TRUE, print.auc = TRUE, ci=TRUE)
+library(AICcmodavg)
+library("stringr")
+
+colnames_each_subcohort <- c("IRM","N variables","AIC score in training dataset","AIC order (lowest -> highest) in training dataset","ROCAUC (CI95) in training dataset","ROCAUC (CI95) in testing dataset")
+
+#for easierness structure this as three separate tables:
+#AIC score
+#ROC algorithm
+#6 and 7 variable risk models
+
+#5 rows - 5 IRMs with lowest AIC score
+x <- length(colnames_each_subcohort)
+aic_lowest <- matrix(rep('', times=(5*x*15)), ncol=x*15, byrow=TRUE)
+aic_models_train2 <- aic_models_train
+
+for (i in c(1:15)) {
+  if (i %in% c(1:4,6:8,10:13)) {
+    print(i)
+    aic_models_train2[[i]]$order <- 1:nrow(aic_models_train2[[i]])
+    
+    #model name
+    aic_lowest[1,((i*6)-5)] <- aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 1]
+    #number of variables
+    aic_lowest[1,((i*6)-4)] <- str_count(aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 1], "\\+") + 1
+    #AIC score
+    aic_lowest[1,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 1]
+    #AIC model order
+    aic_lowest[1,((i*6)-2)] <- 1
+    #ROCAUC of AIC formulas (training datasets)
+    baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 1])), dataframe = p_v_train[[i]], pt=FALSE)
+    aic_lowest[1,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    #ROCAUC of AIC formulas (testing datasets)
+    baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 1])), dataframe = p_v_test[[i]], pt=FALSE)
+    aic_lowest[1,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    
+    #repeat but for the other AIC models (depending on how many there are)
+    if (nrow(aic_models_train2[[i]]) >=2) {
+      aic_lowest[2,((i*6)-5)] <- aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 2]
+      aic_lowest[2,((i*6)-4)] <- str_count(aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 2], "\\+") + 1
+      aic_lowest[2,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 2]
+      aic_lowest[2,((i*6)-2)] <- 2
+      baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 2])), dataframe = p_v_train[[i]], pt=FALSE)
+      aic_lowest[2,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 2])), dataframe = p_v_test[[i]], pt=FALSE)
+      aic_lowest[2,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+    if (nrow(aic_models_train2[[i]]) >=3) {
+      aic_lowest[3,((i*6)-5)] <- aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 3]
+      aic_lowest[3,((i*6)-4)] <- str_count(aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 3], "\\+") + 1
+      aic_lowest[3,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 3]
+      aic_lowest[3,((i*6)-2)] <- 3
+      baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 3])), dataframe = p_v_train[[i]], pt=FALSE)
+      aic_lowest[3,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 3])), dataframe = p_v_test[[i]], pt=FALSE)
+      aic_lowest[3,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+    if (nrow(aic_models_train2[[i]]) >=4) {
+      aic_lowest[4,((i*6)-5)] <- aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 4]
+      aic_lowest[4,((i*6)-4)] <- str_count(aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 4], "\\+") + 1
+      aic_lowest[4,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 4]
+      aic_lowest[4,((i*6)-2)] <- 4
+      baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 4])), dataframe = p_v_train[[i]], pt=FALSE)
+      aic_lowest[4,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 4])), dataframe = p_v_test[[i]], pt=FALSE)
+      aic_lowest[4,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+    if (nrow(aic_models_train2[[i]]) >=5) {
+      aic_lowest[5,((i*6)-5)] <- aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 5]
+      aic_lowest[5,((i*6)-4)] <- str_count(aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 5], "\\+") + 1
+      aic_lowest[5,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 5]
+      aic_lowest[5,((i*6)-2)] <- 5
+      baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 5])), dataframe = p_v_train[[i]], pt=FALSE)
+      aic_lowest[5,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      baseauc <- rocauc(formula(paste0('case',aic_models_train2[[i]]$Modnames[aic_models_train2[[i]]$order == 5])), dataframe = p_v_test[[i]], pt=FALSE)
+      aic_lowest[5,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+
   } else {
-    roc = roc(dataframe$case ~ prob, plot = FALSE, print.auc = TRUE, ci=TRUE)}
-  return(roc)
+    aic_lowest[1,((i*6)-5):(i*6)] <- NA
+  }
 }
-
-ST_mod <- matrix(rep(NA, times=(25*15*5)), ncol=15*5, byrow=TRUE)
-
-#list of variables in the 4 and 6 variable models
-irm4 <- c('abdo_pain','grs','sex','sym_age')
-irm6 <- c('abdo_pain','grs','sex','sym_age','change_bowel_habit','rectal_bloodloss')
-#versions without sex variable for cohorts already filtered by sex:
-irm3 <- c('abdo_pain','grs','sym_age')
-irm5 <- c('abdo_pain','grs','sym_age','change_bowel_habit','rectal_bloodloss')
-
-#takes quite a long time to run:
 for (i in 1:15) {
-  print(names(rocauc_irm[i]))
-  if (i != 14) {#as long as there are actually models/variables
-    x <- aic_models[[i]][,1:3] #get model names, variable number, and AIC scores
-    x <- x[order(x$AICc),] #order by AIC scores lowest -> highest
-    x <- x[!duplicated(x$Modnames),] #remove duplicate models
-    x$order <- c(1:nrow(x)) #number models by lowest -> highest AIC score
-    
-    
-    if (nrow(x) < 5) { #if less than 5 models
-      print('finding lowest AIC models. < 5 models')
-      a <- 5-(nrow(x))
-      #model names
-      ST_mod[2:(6-a),(i*5)-4] <- x$Modnames[1:(5-a)]
-      #number of variables
-      ST_mod[2:(6-a),(i*5)-3] <- x$K[1:(5-a)]-2
-      #AIC score
-      ST_mod[2:(6-a),(i*5)-2] <- x$AICc[1:(5-a)]
-      #AIC order
-      ST_mod[2:(6-a),(i*5)-1] <- x$order[1:(5-a)]
-      #ROCAUC
-      for (j in 1:nrow(x)) {
-        b <- rocauc(paste0('case',x$Modnames[j]),p_v[[i]],F)
-        ST_mod[2:(6-a),(i*5)] <- paste0(round(b$ci[[1]], 2),' (', round(b$ci[[2]], 2),'-',round(b$ci[[3]], 2),')')
-      }
-    } else {
-      print('finding lowest AIC models. >= 5 models')
-      #name
-      ST_mod[2:6,(i*5)-4] <- x$Modnames[1:5]
-      #number
-      ST_mod[2:6,(i*5)-3] <- x$K[1:5]-2
-      #AIC
-      ST_mod[2:6,(i*5)-2] <- x$AICc[1:5]
-      #order
-      ST_mod[2:6,(i*5)-1] <- x$order[1:5]
-      #ROCAUC
-      for (j in 1:5) {
-        b <- rocauc(paste0('case',x$Modnames[j]),p_v[[i]],F)
-        ST_mod[(1+j),(i*5)] <- paste0(round(b$ci[[1]], 2),' (', round(b$ci[[2]], 2),'-',round(b$ci[[3]], 2),')')
-      }
-      print('finding highest AIC models. >= 5 models')
-      #name
-      ST_mod[8:12,(i*5)-4] <- x$Modnames[nrow(x):(nrow(x)-4)]
-      #number
-      ST_mod[8:12,(i*5)-3] <- x$K[nrow(x):(nrow(x)-4)]-2
-      #AIC
-      ST_mod[8:12,(i*5)-2] <- x$AICc[nrow(x):(nrow(x)-4)]
-      #order
-      ST_mod[8:12,(i*5)-1] <- x$order[nrow(x):(nrow(x)-4)]
-      #ROCAUC
-      for (j in 1:5) {
-        b <- rocauc(paste0('case',x$Modnames[(nrow(x)-j+1)]),p_v[[i]],F)
-        ST_mod[(7+j),(i*5)] <- paste0(round(b$ci[[1]], 2),' (', round(b$ci[[2]], 2),'-',round(b$ci[[3]], 2),')')
-      }
-    } 
-    #make an empty dataframe
-    all_model_var <- data.frame(matrix(nrow=30,ncol=0))
-    #time for 4 and 6 var models
-    print('Finding 4 and 6 var models')
-    flag4 = nrow(x)
-    flag6 = nrow(x)
-    flag3 = nrow(x)
-    flag5 = nrow(x)
-    for (j in 1:nrow(x)) { #for every model tested by AIC scoring
-      model_var <- substring(x[j,1], 2, nchar(x[j,1])) #remove the '~' character at front of model
-      #split each model from string e.g. 'abdo_pain+grs' to a list: abdo_pain, grs
-      model_var <- strsplit(model_var, "+", fixed = TRUE)
-      model_var <- as.vector(model_var[[1]])
-      #if model matches the 4-variable model
-      if (i %in% c(1:5) & length(model_var) == 4 & all(unique(model_var)) %in% unique(irm4) & x[j,4] < flag4) {#in cohorts not stratified by sex
-        print('We found one! (AIC for 4 variables)')
-        #add it to the table:
-        #score
-        ST_mod[15,(i*5)-2] <- x[j,3]
-        #order
-        ST_mod[15,(i*5)-1] <- x[j,4]
-        #we've found one AIC model that matches the model we're looking for, no need to search again:
-        flag4 <- x[j,4]
-      }
-      #if it matches the 6 variable model
-      if (i %in% c(1:5) & length(model_var) == 6 & all(unique(model_var)) %in% unique(irm6) & x[j,4] < flag6) {#in cohorts not stratified by sex
-        print('We found one! (AIC for 6 variables)')
-        #add it to the table:
-        #score
-        ST_mod[16,(i*5)-2] <- x[j,3]
-        #order
-        ST_mod[16,(i*5)-1] <- x[j,4]
-        #we've found one AIC model that matches the model we're looking for, no need to search again:
-        flag6 <- x[j,4]
-      }
-      #if model matches the 4-variable model (3, excluding sex)
-      if (i %in% c(6:15) & length(model_var) == 3 & all(unique(model_var)) %in% unique(irm3) & x[j,4] < flag3) {#in cohorts stratified by sex
-        print('We found one! (AIC for 3 variables)')
-        #add it to the table:
-        #score
-        ST_mod[15,(i*5)-2] <- x[j,3]
-        #order
-        ST_mod[15,(i*5)-1] <- x[j,4]
-        #we've found one AIC model that matches the model we're looking for, no need to search again:
-        flag3 <- x[j,4]
-      }
-      #if model matches the 6-variable model (5, excluding sex)
-      if (i %in% c(6:15) & length(model_var) == 5 & all(unique(model_var)) %in% unique(irm5) & x[j,4] < flag5) {#in cohorts stratified by sex
-        print('We found one! (AIC for 5 variables)')
-        #add it to the table:
-        #score
-        ST_mod[16,(i*5)-2] <- x[j,3]
-        #order
-        ST_mod[16,(i*5)-1] <- x[j,4]
-        #we've found one AIC model that matches the model we're looking for, no need to search again:
-        flag5 <- x[j,4]
-      }
-      if (i %in% c(6:15)) {
-        #name
-        ST_mod[15,(i*5)-4] <- 'age at first symptom+abdominal pain+PRS'
-        #number
-        ST_mod[15,(i*5)-3] <- 3
-        #ROCAUC
-        d <- rocauc('case~sym_age+grs+abdo_pain',p_v[[i]],F)
-        ST_mod[15,(i*5)] <- paste0(round(d$ci[[1]], 2),' (', round(d$ci[[2]], 2),'-',round(d$ci[[3]], 2),')')
-        #name
-        ST_mod[16,(i*5)-4] <- 'age at first symptom+abdominal pain+PRS+rectal bleeding+change in bowel habits'
-        #number
-        ST_mod[16,(i*5)-3] <- 5
-        #ROCAUC
-        d <- rocauc('case~sym_age+grs+abdo_pain+change_bowel_habit+rectal_bloodloss',p_v[[i]],F)
-        ST_mod[16,(i*5)] <- paste0(round(d$ci[[1]], 2),' (', round(d$ci[[2]], 2),'-',round(d$ci[[3]], 2),')')
-      }
-      if (i %in% c(1:5)) {
-        #name
-        ST_mod[16,(i*5)-4] <- 'age at first symptom+abdominal pain+PRS+sex+rectal bleeding+change in bowel habits'
-        #number
-        ST_mod[16,(i*5)-3] <- 6
-        #ROCAUC
-        d <- rocauc('case~sex+sym_age+grs+abdo_pain+change_bowel_habit+rectal_bloodloss',p_v[[i]],F)
-        ST_mod[16,(i*5)] <- paste0(round(d$ci[[1]], 2),' (', round(d$ci[[2]], 2),'-',round(d$ci[[3]], 2),')')
-        #name
-        ST_mod[15,(i*5)-4] <- 'age at first symptom+abdominal pain+PRS+sex'
-        #number
-        ST_mod[15,(i*5)-3] <- 4
-        #ROCAUC
-        d <- rocauc('case~sex+sym_age+grs+abdo_pain',p_v[[i]],F)
-        ST_mod[15,(i*5)] <- paste0(round(d$ci[[1]], 2),' (', round(d$ci[[2]], 2),'-',round(d$ci[[3]], 2),')')
-        
-      }
-      
-      #add the model to a dataframe
-      print('adding the model to big dataframe')
-      model_var <- c(model_var, rep(NA, 30 - length(model_var)))
-      all_model_var <- cbind(all_model_var, model_var)
-    }
-    #best model for each cohort according to rocauc
-    print('best model according to ROCAUC')
-    for (k in 1:length(rocauc_irm[[i]])) {
-      e <- as.vector(names(rocauc_irm[[i]])[1:k])
-      #name
-      ST_mod[17+k,(i*5)-4] <- paste0(e,collapse = '+')
-      #number
-      ST_mod[17+k,(i*5)-3] <- k
-      for (l in 1:ncol(all_model_var)) {
-        if (e %in% all_model_var[,l] & length(e) == length(na.omit(all_model_var[,l]))) {
-          #score
-          ST_mod[17+k,(i*5)-2] <- x[l,3]
-          #order
-          ST_mod[17+k,(i*5)-1] <- x[l,4]
-        }
-      }
-      #rocauc
-      ST_mod[17+k,(i*5)] <- paste0(round(rocauc_irm[[i]][[k]][[1]], 2),' (',
-                                   round(rocauc_irm[[i]][[k]][[2]], 2),'-',
-                                   round(rocauc_irm[[i]][[k]][[3]], 2),')')
-      
-    }
+  if (i %in% c(1:4,6:8,10:13)) {
+    aic_lowest[,((i*6)-3)] <- signif(as.numeric(aic_lowest[,((i*6)-3)]),6)
   }
 }
 
+#6 rows - ROCAUC algorithm IRMs
+roc_alg <- matrix(rep('', times=(6*x*15)), ncol=x*15, byrow=TRUE)
+for (i in 1:15) {
+  print(i)
+  if (i %in% c(1:4,6:8,10:13)) {
+    print('A1')
+    #model name
+    roc_alg[1,((i*6)-5)] <- names(rocauc_irm_train[[i]][1])
+    #number of variables
+    roc_alg[1,((i*6)-4)] <- 1
+    #AIC score 
+    #roc_alg[1,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 1]
+    #AIC model order
+    #roc_alg[1,((i*6)-2)] <- 1
+    #ROCAUC (training datasets)
+    baseauc <- rocauc(formula(paste0('case~',names(rocauc_irm_train[[i]][1]))), dataframe = p_v_train[[i]], pt=FALSE)
+    roc_alg[1,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    #ROCAUC (testing datasets)
+    baseauc <- rocauc(formula(paste0('case~',names(rocauc_irm_train[[i]][1]))), dataframe = p_v_test[[i]], pt=FALSE)
+    roc_alg[1,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    
+    if (length(rocauc_irm_train[[i]]) >= 2) {
+      print('B2')
+      #model name
+      roc_alg[2,((i*6)-5)] <- paste(names(rocauc_irm_train[[i]][1]),names(rocauc_irm_train[[i]][2]),sep='+')
+      #number of variables
+      roc_alg[2,((i*6)-4)] <- 2
+      #AIC score 
+      #roc_alg[2,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 1]
+      #AIC model order
+      #roc_alg[2,((i*6)-2)] <- 1
+      #ROCAUC (training datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[2,((i*6)-5)])), dataframe = p_v_train[[i]], pt=FALSE)
+      roc_alg[2,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      #ROCAUC (testing datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[2,((i*6)-5)])), dataframe = p_v_test[[i]], pt=FALSE)
+      roc_alg[2,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+    if (length(rocauc_irm_train[[i]]) >= 3) {
+      print('C3')
+      #model name
+      roc_alg[3,((i*6)-5)] <- paste(names(rocauc_irm_train[[i]][1]),names(rocauc_irm_train[[i]][2]),names(rocauc_irm_train[[i]][3]),sep='+')
+      #number of variables
+      roc_alg[3,((i*6)-4)] <- 3
+      #AIC score 
+      #roc_alg[3,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 1]
+      #AIC model order
+      #roc_alg[3,((i*6)-2)] <- 1
+      #ROCAUC (training datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[3,((i*6)-5)])), dataframe = p_v_train[[i]], pt=FALSE)
+      roc_alg[3,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      #ROCAUC (testing datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[3,((i*6)-5)])), dataframe = p_v_test[[i]], pt=FALSE)
+      roc_alg[3,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+    if (length(rocauc_irm_train[[i]]) >= 4) {
+      print('D4')
+      #model name
+      roc_alg[4,((i*6)-5)] <- paste(names(rocauc_irm_train[[i]][1]),names(rocauc_irm_train[[i]][2]),
+                                    names(rocauc_irm_train[[i]][3]),names(rocauc_irm_train[[i]][4]),sep='+')
+      #number of variables
+      roc_alg[4,((i*6)-4)] <- 4
+      #AIC score 
+      #roc_alg[4,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 1]
+      #AIC model order
+      #roc_alg[4,((i*6)-2)] <- 1
+      #ROCAUC (training datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[4,((i*6)-5)])), dataframe = p_v_train[[i]], pt=FALSE)
+      roc_alg[4,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      #ROCAUC (testing datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[4,((i*6)-5)])), dataframe = p_v_test[[i]], pt=FALSE)
+      roc_alg[4,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+    if (length(rocauc_irm_train[[i]]) >= 5) {
+      print('E5')
+      #model name
+      roc_alg[5,((i*6)-5)] <- paste(names(rocauc_irm_train[[i]][1]),names(rocauc_irm_train[[i]][2]),
+                                    names(rocauc_irm_train[[i]][3]),names(rocauc_irm_train[[i]][4]),
+                                    names(rocauc_irm_train[[i]][5]),sep='+')
+      #number of variables
+      roc_alg[5,((i*6)-4)] <- 5
+      #AIC score 
+      #roc_alg[5,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 1]
+      #AIC model order
+      #roc_alg[5,((i*6)-2)] <- 1
+      #ROCAUC (training datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[5,((i*6)-5)])), dataframe = p_v_train[[i]], pt=FALSE)
+      roc_alg[5,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      #ROCAUC (testing datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[5,((i*6)-5)])), dataframe = p_v_test[[i]], pt=FALSE)
+      roc_alg[5,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+    if (length(rocauc_irm_train[[i]]) >= 6) {
+      print('F6')
+      #model name
+      roc_alg[6,((i*6)-5)] <- paste(names(rocauc_irm_train[[i]][1]),names(rocauc_irm_train[[i]][2]),
+                                    names(rocauc_irm_train[[i]][3]),names(rocauc_irm_train[[i]][4]),
+                                    names(rocauc_irm_train[[i]][5]),names(rocauc_irm_train[[i]][6]),
+                                    sep='+')
+      #number of variables
+      roc_alg[6,((i*6)-4)] <- 6
+      #AIC score 
+      #roc_alg[5,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 1]
+      #AIC model order
+      #roc_alg[5,((i*6)-2)] <- 1
+      #ROCAUC (training datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[6,((i*6)-5)])), dataframe = p_v_train[[i]], pt=FALSE)
+      roc_alg[6,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+      #ROCAUC (testing datasets)
+      baseauc <- rocauc(formula(paste0('case~',roc_alg[6,((i*6)-5)])), dataframe = p_v_test[[i]], pt=FALSE)
+      roc_alg[6,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    }
+    
+  } else {
+    roc_alg[1,((i*6)-5):(i*6)] <- NA
+  }
+}
 
-rownames(ST_mod) <- c('IRMs developed in each (sub)cohort',
-  '5 IRMs with lowest AIC score','','','','','',
-  '5 IRMs with highest AIC score','','','','','',
-  'IRMs developed in the full cohort',
-  '4-variable IRM (3 if excluding sex in sex-stratified cohorts)',
-  '6-variable IRM (5 if excluding sex in sex-stratified cohorts)',
-  'most predictive IRM according to ROCAUC algorithm',
-  'Variable 1','Variable 2', 'Variable 3', 'Variable 4', 'Variable 5', 'Variable 6', 'Variable 7',
-  'Variable 8') 
+#1 row - 6-variable IRM
+irm6 <- matrix(rep('', times=(x*15)), ncol=x*15, byrow=TRUE)
+for (i in 1:15) {
+  if (i %in% c(6:15) == TRUE) { #don't include sex as variable in the cohorts which only contain one sex
+    #model name
+    irm6[1,((i*6)-5)] <- '~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit'
+    #ROCAUC (training datasets)
+    baseauc <- rocauc(formula('case~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit'), dataframe = p_v_train[[i]], pt=FALSE)
+    irm6[1,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    #ROCAUC (testing datasets)
+    baseauc <- rocauc(formula('case~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit'), dataframe = p_v_test[[i]], pt=FALSE)
+    irm6[1,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+  } else {
+    #model name
+    irm6[1,((i*6)-5)] <- '~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit+sex'
+    #ROCAUC (training datasets)
+    baseauc <- rocauc(formula('case~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit+sex'), dataframe = p_v_train[[i]], pt=FALSE)
+    irm6[1,((i*6)-1)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+    #ROCAUC (testing datasets)
+    baseauc <- rocauc(formula('case~abdo_pain+sym_age+grs+rectal_bloodloss+change_bowel_habit+sex'), dataframe = p_v_test[[i]], pt=FALSE)
+    irm6[1,(i*6)] <- paste0(signif(baseauc$ci[2],3),' (',signif(baseauc$ci[1],3),'-',signif(baseauc$ci[3],3),')')
+  }
+  #number of variables
+  irm6[1,((i*6)-4)] <- 6
+  
+  #AIC score
+  irm6[1,((i*6)-3)] <- aic_models_train2[[i]]$AICc[aic_models_train2[[i]]$order == 1]
+  #AIC model order
+  #irm6[1,((i*6)-2)] <- 1
+}
 
-colnames(ST_mod) <- rep(names(p_v),each=5)
 
-write.csv(ST_mod, "ST_7.csv", row.names=T)
+write.csv(aic_lowest, "aic_lowest.csv", row.names=T)
+write.csv(roc_alg, "roc_alg.csv", row.names=T)
+write.csv(irm6, "irm6.csv", row.names=T)
 
-#then in Excel, rows were reordered and e.g. 'abdo_pain' was replaced with 'abdominal pain' using find and replace
+#then in Excel, tables were combined and variable names replaced e.g. 'abdo_pain' with 'abdominal pain' using find and replace
 
 
 
