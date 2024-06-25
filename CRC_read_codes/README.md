@@ -10,7 +10,7 @@ Using the aforementioned 170 (151+19) codes as input, 57 further Read codes were
 Codes found by MB and BMR can be found in CRC_symptoms_76_codes.csv</p>
 
 **Diagnosis**</p>
-Study participants with a CRC diagnosis were identified by looking for the ICD-10 codes C18.0*, C18.2, C18.3, C18.4, C18.5, C18.6, C18.7, C18.8, C18.9, C19, C20 in Hospital Episode Statistic, Cancer Registry and death records, or by looking for the 49 Read codes in CRC_diagnosis_49_codes.csv in GP records. These 59 Read codes were found by cropping Read codes from Fairhurst et al.(1) to 3 characters, and using this as input to the find_read_codes function.</p>
+Study participants with a CRC diagnosis were identified by looking for the ICD-10 codes C18.0*, C18.2, C18.3, C18.4, C18.5, C18.6, C18.7, C18.8, C18.9, C19, C20 in Hospital Episode Statistic, Cancer Registry and death records, or by looking for the 49 Read codes in CRC_diagnosis_49_codes.csv in GP records. These 49 Read codes were found by cropping Read codes from Fairhurst et al.(1) to 3 characters, and using this as input to the find_read_codes function.</p>
 
 *C18.1, cancer of the appendix, was excluded</p>
 
