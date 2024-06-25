@@ -519,7 +519,7 @@ density50 <- p_50 %>% ggplot() +
 
 #going with age threshold 40 because it increases case to control ratio without excluding too many participants
 
-#4A. exclude participants with pathogenic variants in Lynch syndrome genes
+#3D. exclude participants with pathogenic variants in Lynch syndrome genes
 #=====================================================================
 #genes are MLH1, MSH2 and MSH6
 #import tables of participants with pathogenic variants (for a list of UKBB participants with pathogenic variants
@@ -586,13 +586,13 @@ nrow(p_40[(p_40$eid %in% crc_h_eid$eid) & (p_40$case == '0'),]) #29 controls
 #remove participants diagnosed with hereditary CRC syndromes from cohort:
 p_40 <- p_40[!(p_40$eid %in% crc_h_eid$eid),]
 
-#4B. exclude participants which are neither cases nor controls (i.e. don't meet study inclusion criteria)
+#3E. exclude participants which are neither cases nor controls (i.e. don't meet study inclusion criteria)
 #=================================================================================================
 #p_00_v <- p_00 %>% filter(!(case == 'exclude'))
 p_40_v <- p_40 %>% filter(!(case == 'exclude'))
 #p_50_v <- p_50 %>% filter(!(case == 'exclude'))
 
-#4C. Add UKBB variables
+#4A. Add UKBB variables
 #=====================
 #import some tables of UKBB variables for all UKBB participants:
 var <- read.csv('00_participant_variables.csv') #UKBB variables
@@ -651,7 +651,7 @@ add_variables <- function(p_xx) {
 
 p_40_v <- add_variables(p_40_v)
 
-#4D. Add family history
+#4B. Add family history
 #=====================
 add_fh <- function(fh, p_xx_v) {
   fh_temp <- filter(fh, eid %in% p_xx_v$eid)
@@ -674,7 +674,7 @@ add_fh <- function(fh, p_xx_v) {
 
 p_40_v <- add_fh(fh, p_40_v)
 
-#4E. Add which symptom type each participant had
+#4C. Add which symptom type each participant had
 #==========================================
 #symptom_type is a dataframe: row names contain read codes and column names contain the symptom category each read code falls
 #into (e.g. abdominal pain, weight loss).
@@ -720,7 +720,7 @@ add_symptoms <- function(p_xx_v, p_sym_filtered_xx) {
 
 p_40_v <- add_symptoms(p_40_v,p_sym_filtered_40)
 
-#4F. Add haemoglobin levels
+#4D. Add haemoglobin levels
 #==========================
 haem <- read_GP(c('44TC.','XaBLm'))
 haem$value1 <- as.numeric(haem$value1)
@@ -752,7 +752,7 @@ mean(p_40_v$haem_diff[!is.na(p_40_v$haem_date)], na.rm=TRUE) #=574
 sum(!is.na(p_40_v$haem_level))
 #88 participants had a haemoglobin measurement
 
-#4G. Add faecal occult blood test (within 8 weeks of symptom) as a variable
+#4E. Add faecal occult blood test (within 8 weeks of symptom) as a variable
 #==========================================================================
 #This was in response to a reviewer request, to know whether faecal occult blood test result
 #near symptoms was predictive of CRC - however there were only 22 participants with a positive
@@ -780,7 +780,7 @@ p_40_v$fob_8weeks <- rep(NA, nrow(p_40_v))
 p_40_v$fob_8weeks[p_40_v$eid %in% fob_date_positive$eid] <- 1
 p_40_v$fob_8weeks[p_40_v$eid %in% fob_date_negative$eid] <- 0
 
-#4H. Add info on whether CRC is left or right sided
+#4F. Add info on whether CRC is left or right sided
 #===================================================
 #There are separate variable columns for left and right side in case someone has both
 
@@ -837,7 +837,7 @@ p_40_v$right_sided_CRC[(p_40_v$case == 1) & ((p_40_v$diagnosis_1 %in% right) |
                                                (p_40_v$diagnosis_4 %in% right))] <- 1
 p_40_v$right_sided_CRC[(p_40_v$case == 1) & is.na(p_40_v$right_sided_CRC)] <- 0
 
-#4I. Convert some categorical variables to factor variables
+#4G. Convert some categorical variables to factor variables
 #========================================================
 factorise <- function(p_xx_v) {
   p <- p_xx_v
