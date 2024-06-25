@@ -1,11 +1,10 @@
 #required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
-#p_v from Section 6
+#p_v_train and p_v_test from Section 7
 
 #logistic regression
 #==================================
-
-#install.packages("pROC")
 library(pROC)
+library(dplyr)
 rocauc=function(form,dataframe,pt){
   logit <- glm(form, data = dataframe, family = "binomial")
   prob = predict(logit, newdata = dataframe, type = "response")
@@ -16,8 +15,393 @@ rocauc=function(form,dataframe,pt){
   return(roc)
 }
 
-ST_lr <- matrix(rep(NA, 51*15*3), ncol=15*3, byrow=TRUE)
-rownames(ST_lr) <- c('sex','sym_age','TDI','BMI',
+or_list2 <- function(p_xx_v, col_list, outcome) {
+  lr <- replicate(length(col_list), rep(list(OR = NA, L95 = NA, U95 = NA, p = NA, ROC = NA, ROCL95 = NA, ROCU95 = NA), times=9), 
+                  simplify = FALSE)
+  
+  #print cohort age
+  print(paste0('age:',min(p_xx_v$sym_age),'-',max(p_xx_v$sym_age)))
+  
+  for (i in 1:length(col_list)) {
+    print(i) #print column/iteration
+    
+    x <- colnames(p_xx_v)[col_list][i]
+    print(paste0(outcome,'~',x))
+    
+    #ll <- length(unique(p_xx_v[colnames(p_xx_v == x)]))
+    
+    if ((length(unique(na.exclude(p_xx_v[[col_list[i]]]))) > 1)) { #if there's only one value in the column glm can't run
+      if ((i != 7) & (i != 8) & (i != 10)) {
+        basemod <- glm(noquote(paste0(outcome,'~',x)), data=p_xx_v, family=binomial) %>% summary()
+        basemod2 <- rocauc(formula(paste0(outcome,'~',x)), p_xx_v, FALSE)
+        lr[[i]][[1]] <- round(exp(basemod$coefficients[2,1]),2)
+        lr[[i]][[2]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[3]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[4]] <- (signif(basemod$coefficients[2,4],2))
+        lr[[i]][[5]] <- round(basemod2$ci[2],2)
+        lr[[i]][[6]] <- round(basemod2$ci[1],2)
+        lr[[i]][[7]] <- round(basemod2$ci[3],2)
+      }
+      
+      if (i == 7) {
+        print('never v previous')
+        y <- p_xx_v[p_xx_v$smoking_status == 'Never' |
+                      p_xx_v$smoking_status == 'Previous',]
+        basemod <- glm(case~smoking_status,data=y,family='binomial') %>% summary()
+        basemod2 <- rocauc(case~smoking_status, y, F)
+        lr[[i]][[1]] <- round(exp(basemod$coefficients[2,1]),2)
+        lr[[i]][[2]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[3]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[4]] <- (signif(basemod$coefficients[2,4],2))
+        lr[[i]][[5]] <- round(basemod2$ci[2],2)
+        lr[[i]][[6]] <- round(basemod2$ci[1],2)
+        lr[[i]][[7]] <- round(basemod2$ci[3],2)
+        print('never v current')
+        y <- p_xx_v[p_xx_v$smoking_status == 'Never' |
+                      p_xx_v$smoking_status == 'Current',]
+        basemod <- glm(case~smoking_status,data=y,family='binomial') %>% summary()
+        basemod2 <- rocauc(case~smoking_status, y, F)
+        lr[[i]][[8]] <- round(exp(basemod$coefficients[2,1]),2)
+        lr[[i]][[9]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[10]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[11]] <- (signif(basemod$coefficients[2,4],2))
+        lr[[i]][[12]] <- round(basemod2$ci[2],2)
+        lr[[i]][[13]] <- round(basemod2$ci[1],2)
+        lr[[i]][[14]] <- round(basemod2$ci[3],2)
+        print('previous v current')
+        y <- p_xx_v[p_xx_v$smoking_status == 'Previous' |
+                      p_xx_v$smoking_status == 'Current',]
+        basemod <- glm(case~smoking_status,data=y,family='binomial') %>% summary()
+        basemod2 <- rocauc(case~smoking_status, y, F)
+        lr[[i]][[15]] <- round(exp(basemod$coefficients[2,1]),2)
+        lr[[i]][[16]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[17]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[18]] <- (signif(basemod$coefficients[2,4],2))
+        lr[[i]][[19]] <- round(basemod2$ci[2],2)
+        lr[[i]][[20]] <- round(basemod2$ci[1],2)
+        lr[[i]][[21]] <- round(basemod2$ci[3],2)
+      }
+      if (i == 8) {
+        print('never v special occasions')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'Never' |
+                        p_xx_v$alcohol_intake == 'Special occasions only',]
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+        basemod2 <- rocauc(case~alcohol_intake, y, F)
+        lr[[i]][[1]] <- round(exp(basemod$coefficients[2,1]),2)
+        lr[[i]][[2]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[3]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+        lr[[i]][[4]] <- (signif(basemod$coefficients[2,4],2))
+        lr[[i]][[5]] <- round(basemod2$ci[2],2)
+        lr[[i]][[6]] <- round(basemod2$ci[1],2)
+        lr[[i]][[7]] <- round(basemod2$ci[3],2)
+        }
+        print('never v 1-3 x a month')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'Never' |
+                        p_xx_v$alcohol_intake == 'One to three times a month',]
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~alcohol_intake, y, F)
+          lr[[i]][[8]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[9]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[10]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[11]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[12]] <- round(basemod2$ci[2],2)
+          lr[[i]][[13]] <- round(basemod2$ci[1],2)
+          lr[[i]][[14]] <- round(basemod2$ci[3],2)
+        }
+        print('never v 1-2 x a week')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'Never' |
+                        p_xx_v$alcohol_intake == 'Once or twice a week',]
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~alcohol_intake, y, F)
+          lr[[i]][[15]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[16]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[17]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[18]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[19]] <- round(basemod2$ci[2],2)
+          lr[[i]][[20]] <- round(basemod2$ci[1],2)
+          lr[[i]][[21]] <- round(basemod2$ci[3],2)
+        }
+        print('never v 3-4 x a week')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'Never' |
+                        p_xx_v$alcohol_intake == 'Three or four times a week',]
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~alcohol_intake, y, F)
+          lr[[i]][[22]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[23]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[24]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[25]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[26]] <- round(basemod2$ci[2],2)
+          lr[[i]][[27]] <- round(basemod2$ci[1],2)
+          lr[[i]][[28]] <- round(basemod2$ci[3],2)
+        }
+
+        print('never v daily')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'Never' |
+                        p_xx_v$alcohol_intake == 'Daily or almost daily',]
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~alcohol_intake, y, F)
+          lr[[i]][[29]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[30]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[31]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[32]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[33]] <- round(basemod2$ci[2],2)
+          lr[[i]][[34]] <- round(basemod2$ci[1],2)
+          lr[[i]][[35]] <- round(basemod2$ci[3],2)
+        }
+
+
+        print('special occasions v 1-3 x month')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'Special occasions only' |
+                        p_xx_v$alcohol_intake == 'One to three times a month',]
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~alcohol_intake, y, F)
+          lr[[i]][[36]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[37]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[38]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[39]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[40]] <- round(basemod2$ci[2],2)
+          lr[[i]][[41]] <- round(basemod2$ci[1],2)
+          lr[[i]][[42]] <- round(basemod2$ci[3],2)
+        }
+
+        print('1-3 x month v 1-2 x a week')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'One to three times a month' |
+                        p_xx_v$alcohol_intake == 'Once or twice a week',] 
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~alcohol_intake, y, F)
+          lr[[i]][[43]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[44]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[45]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[46]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[47]] <- round(basemod2$ci[2],2)
+          lr[[i]][[48]] <- round(basemod2$ci[1],2)
+          lr[[i]][[49]] <- round(basemod2$ci[3],2)
+        }
+
+        print('1-2 x a week v 3-4 x a week')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'Once or twice a week' |
+                        p_xx_v$alcohol_intake == 'Three or four times a week',] 
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~alcohol_intake, y, F)
+          lr[[i]][[50]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[51]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[52]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[53]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[54]] <- round(basemod2$ci[2],2)
+          lr[[i]][[55]] <- round(basemod2$ci[1],2)
+          lr[[i]][[56]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('3-4 x a week v daily')
+        y <- p_xx_v[p_xx_v$alcohol_intake == 'Three or four times a week' |
+                        p_xx_v$alcohol_intake == 'Daily or almost daily',] 
+        if (length(unique(y$alcohol_intake[y$case == 1])) == 1 | length(unique(y$alcohol_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~alcohol_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~alcohol_intake, y, F)
+          lr[[i]][[57]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[58]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[59]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[60]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[61]] <- round(basemod2$ci[2],2)
+          lr[[i]][[62]] <- round(basemod2$ci[1],2)
+          lr[[i]][[63]] <- round(basemod2$ci[3],2)
+        }
+      }
+      if (i == 10) {
+        print('never v <1 a week')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == 'Never' |
+                       p_xx_v$processed_meat_intake == 'Less than once a week',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[1]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[2]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[3]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[4]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[5]] <- round(basemod2$ci[2],2)
+          lr[[i]][[6]] <- round(basemod2$ci[1],2)
+          lr[[i]][[7]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('never v 1 a week')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == 'Never' |
+                       p_xx_v$processed_meat_intake == 'Once a week',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[8]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[9]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[10]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[11]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[12]] <- round(basemod2$ci[2],2)
+          lr[[i]][[13]] <- round(basemod2$ci[1],2)
+          lr[[i]][[14]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('never v 2-4x a week')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == 'Never' |
+                       p_xx_v$processed_meat_intake == '2-4 times a week',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[15]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[16]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[17]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[18]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[19]] <- round(basemod2$ci[2],2)
+          lr[[i]][[20]] <- round(basemod2$ci[1],2)
+          lr[[i]][[21]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('never v 5-6x a week')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == 'Never' |
+                       p_xx_v$processed_meat_intake == '5-6 times a week',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[22]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[23]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[24]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[25]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[26]] <- round(basemod2$ci[2],2)
+          lr[[i]][[27]] <- round(basemod2$ci[1],2)
+          lr[[i]][[28]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('never v once or more daily')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == 'Never' |
+                       p_xx_v$processed_meat_intake == 'Once or more daily',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[29]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[30]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[31]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[32]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[33]] <- round(basemod2$ci[2],2)
+          lr[[i]][[34]] <- round(basemod2$ci[1],2)
+          lr[[i]][[35]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('<1 x week v 1 a week')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == 'Less than once a week' |
+                       p_xx_v$processed_meat_intake == 'Once a week',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[36]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[37]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[38]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[39]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[40]] <- round(basemod2$ci[2],2)
+          lr[[i]][[41]] <- round(basemod2$ci[1],2)
+          lr[[i]][[42]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('1 a week v 2-4 x week')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == 'Once a week' |
+                       p_xx_v$processed_meat_intake == '2-4 times a week',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[43]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[44]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[45]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[46]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[47]] <- round(basemod2$ci[2],2)
+          lr[[i]][[48]] <- round(basemod2$ci[1],2)
+          lr[[i]][[49]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('2-4 x week v 5-6 x week')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == '2-4 times a week' |
+                       p_xx_v$processed_meat_intake == '5-6 times a week',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[50]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[51]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[52]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[53]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[54]] <- round(basemod2$ci[2],2)
+          lr[[i]][[55]] <- round(basemod2$ci[1],2)
+          lr[[i]][[56]] <- round(basemod2$ci[3],2)
+        }
+        
+        print('5-6 x week v daily')
+        y <-  p_xx_v[p_xx_v$processed_meat_intake == '5-6 times a week' |
+                       p_xx_v$processed_meat_intake == 'Once or more daily',]
+        if (length(unique(y$processed_meat_intake[y$case == 1])) == 1 | length(unique(y$processed_meat_intake[y$case == 1])) == 0) {
+          print('SKIPPED')
+        } else {
+          basemod <- glm(case~processed_meat_intake,data=y,family=binomial) %>% summary()
+          basemod2 <- rocauc(case~processed_meat_intake, y, F)
+          lr[[i]][[57]] <- round(exp(basemod$coefficients[2,1]),2)
+          lr[[i]][[58]] <- round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[59]] <- round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2)
+          lr[[i]][[60]] <- (signif(basemod$coefficients[2,4],2))
+          lr[[i]][[61]] <- round(basemod2$ci[2],2)
+          lr[[i]][[62]] <- round(basemod2$ci[1],2)
+          lr[[i]][[63]] <- round(basemod2$ci[3],2)
+        }
+      }
+    } else {
+      print('only 1 value in column, returning NA')
+    }
+    names(lr)[i] <- x
+  }
+  return(lr)
+}
+
+
+col_list_lr <- which(colnames(p_v_train$p_40_ve) %in% c("sym_age","sex","TDI","BMI","waist_circumference","ever_smoked","smoking_status","alcohol_intake","diabetes","processed_meat_intake","PC1","PC2","PC3","PC4","PC5","fh_mat","fh_pat","fh","weightloss","unintentional_weightloss","other_weightloss","loss_appetite","iron_def","abdo_mass","abdo_pain","rectal_bloodloss","change_bowel_habit","haemoglobin","grs","grs_quintile","zscore"))
+lr_train <- lapply(p_v_train, function(x) or_list2(x, col_list_lr, outcome='case'))
+lr_test <- lapply(p_v_test, function(x) or_list2(x, col_list_lr, outcome='case'))
+
+#make table
+levelnames <- c('sym_age','sex','TDI','BMI',
                      'waist circumference','ever smoked',
                      'smoking status','never vs. previous',
                      'never vs. current','previous vs. current',
@@ -35,256 +419,365 @@ rownames(ST_lr) <- c('sex','sym_age','TDI','BMI',
                      'less than once a week vs. once a week',
                      'once a week vs. 2-4 times a week','2-4 times a week vs. 5-6 times a week',
                      '5-6 times a week vs. once or more daily',
+                     'PC1','PC3','PC2','PC4','PC5',
                      'fh mat','fh pat','fh','weight loss','unintentional wl','other wl',
                      'appetite loss','iron deficiency','abdominal mass','abdominal pain',
-                     'rectal bleeding','fob abnormal','change in bowel habit',
-                     'haemoglobin level','PC1','PC3','PC2','PC4','PC5','grs')
+                     'rectal bleeding','change in bowel habit',
+                     'low haemoglobin','grs')
+ST_lr <- matrix(rep(NA, length(levelnames)*15*3*2), ncol=15*3*2, byrow=TRUE)
+rownames(ST_lr) <- levelnames
 
 for (i in 1:15) {
-  print(i)
-  for (j in 1:6) {
-    print(j)
-    ST_lr[j,((i*3)-2)] <- rocauc_v[[i]][[j]]$p
-    print('p complete')
-    ST_lr[j,((i*3)-1)] <- paste0(round(rocauc_v[[i]][[j]]$OR, 2),
-                                 ' (',
-                                 round(rocauc_v[[i]][[j]]$L95, 2),'-',
-                                 round(rocauc_v[[i]][[j]]$U95, 2),')')
-    print('LR complete')
-    ST_lr[j,(i*3)] <- paste0(round(rocauc_v[[i]][[j]][[5]], 2),
-                             ' (',
-                             round(rocauc_v[[i]][[j]][[6]], 2),'-',
-                             round(rocauc_v[[i]][[j]][[7]], 2),')')
-    print('ROCAUC complete')
-  }
-  print('smoking')
-  for (j1 in 8:10) {
-    print(j1)
-    if (j1 == 8) {
-      print('never v previous')
-      x <- p_v[[i]][p_v[[i]]$smoking_status == 'Never' |
-                      p_v[[i]]$smoking_status == 'Previous',]
-      basemod <- glm(case~smoking_status,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~smoking_status, x, F)
-    } else if (j1 == 9) {
-      print('never v current')
-      x <- p_v[[i]][p_v[[i]]$smoking_status == 'Never' |
-                      p_v[[i]]$smoking_status == 'Current',]
-      basemod <- glm(case~smoking_status,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~smoking_status, x, F)
-      
-    } else if (j1 == 10) {
-      print('previous v current')
-      x <- p_v[[i]][p_v[[i]]$smoking_status == 'Previous' |
-                      p_v[[i]]$smoking_status == 'Current',]
-      basemod <- glm(case~smoking_status,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~smoking_status, x, F)
-    }
-    
-    ST_lr[j1,((i*3)-2)] <- (signif(basemod$coefficients[2,4],2))
-    print('p complete')
-    ST_lr[j1,((i*3)-1)] <- paste0(round(exp(basemod$coefficients[2,1]),2),
-                                 ' (',
-                                 round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2),
-                                 '-',
-                                 round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2),
-                                 ')')
-    print('LR complete')
-    ST_lr[j1,(i*3)] <- paste0(round(basemod2$ci[2],2),
-                             ' (',
-                             round(basemod2$ci[1],2),'-',
-                             round(basemod2$ci[3],2),')')
-    print('ROCAUC complete')
-  }
-    #alcohol intake
-  print('alcohol intake')
-    for (j2 in 12:20) {
-      print(j2)
-      if (j2 == 12) {
-        print('never v special occasions')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'Never' |
-                        p_v[[i]]$alcohol_intake == 'Special occasions only',]
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      } else if (j2 == 13) {
-        print('never v 1-3 x a month')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'Never' |
-                        p_v[[i]]$alcohol_intake == 'One to three times a month',]
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      } else if (j2 == 14) {
-        print('never v 1-2 x a week')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'Never' |
-                        p_v[[i]]$alcohol_intake == 'Once or twice a week',]
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      } else if (j2 == 15) {
-        print('never v 3-4 x a week')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'Never' |
-                        p_v[[i]]$alcohol_intake == 'Three or four times a week',]
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      } else if (j2 == 16) {
-        print('never v daily')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'Never' |
-                        p_v[[i]]$alcohol_intake == 'Daily or almost daily',]
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      }
-      else if (j2 == 17) {
-        print('special occasions v 1-3 x month')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'Special occasions only' |
-                        p_v[[i]]$alcohol_intake == 'One to three times a month',]
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      } else if (j2 == 18) {
-        print('1-3 x month v 1-2 x a week')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'One to three times a month' |
-                        p_v[[i]]$alcohol_intake == 'Once or twice a week',] 
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      } else if (j2 == 19) {
-        print('1-2 x a week v 3-4 x a week')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'Once or twice a week' |
-                        p_v[[i]]$alcohol_intake == 'Three or four times a week',] 
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      } else if (j2 == 20) {
-        print('3-4 x a week v daily')
-        x <- p_v[[i]][p_v[[i]]$alcohol_intake == 'Three or four times a week' |
-                        p_v[[i]]$alcohol_intake == 'Daily or almost daily',] 
-        basemod <- glm(case~alcohol_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~alcohol_intake, x, F)
-      }
-      ST_lr[j2,((i*3)-2)] <- (signif(basemod$coefficients[2,4],2))
-      print('p complete')
-      ST_lr[j2,((i*3)-1)] <- paste0(round(exp(basemod$coefficients[2,1]),2),
-                                   ' (',
-                                   round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2),
-                                   '-',
-                                   round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2),
-                                   ')')
-      print('LR complete')
-      ST_lr[j2,(i*3)] <- paste0(round(basemod2$ci[2],2),
-                               ' (',
-                               round(basemod2$ci[1],2),'-',
-                               round(basemod2$ci[3],2),')')
-      print('ROCAUC complete')
-    }
-  #diabetes
-  print('21')
-  ST_lr[21,((i*3)-2)] <- rocauc_v[[i]]$diabetes$p
-  print('p complete')
-  ST_lr[21,((i*3)-1)] <- paste0(round(rocauc_v[[i]]$diabetes$OR, 2),
-                                ' (',
-                                round(rocauc_v[[i]]$diabetes$L95, 2),'-',
-                                round(rocauc_v[[i]]$diabetes$U95, 2),')')
-  print('LR complete')
-  ST_lr[21,(i*3)] <- paste0(round(rocauc_v[[i]]$diabetes[[5]], 2),
-                            ' (',
-                            round(rocauc_v[[i]]$diabetes[[6]], 2),'-',
-                            round(rocauc_v[[i]]$diabetes[[7]], 2),')')
-  print('ROCAUC complete')
+  #sym_age
+  ST_lr[1,((i*6)-5)] <- lr_train[[i]]$sym_age[[4]]
+  ST_lr[1,((i*6)-4)] <- paste0(lr_train[[i]]$sym_age[[1]],' (',lr_train[[i]]$sym_age[[2]],'-',lr_train[[i]]$sym_age[[3]],')')
+  ST_lr[1,((i*6)-3)] <- paste0(lr_train[[i]]$sym_age[[5]],' (',lr_train[[i]]$sym_age[[6]],'-',lr_train[[i]]$sym_age[[7]],')')
+  ST_lr[1,((i*6)-2)] <- lr_test[[i]]$sym_age[[4]]
+  ST_lr[1,((i*6)-1)] <- paste0(lr_test[[i]]$sym_age[[1]],' (',lr_test[[i]]$sym_age[[2]],'-',lr_test[[i]]$sym_age[[3]],')')
+  ST_lr[1,(i*6)] <- paste0(lr_test[[i]]$sym_age[[5]],' (',lr_test[[i]]$sym_age[[6]],'-',lr_test[[i]]$sym_age[[7]],')')
+  #sex
+  ST_lr[2,((i*6)-5)] <- lr_train[[i]]$sex[[4]]
+  ST_lr[2,((i*6)-4)] <- paste0(lr_train[[i]]$sex[[1]],' (',lr_train[[i]]$sex[[2]],'-',lr_train[[i]]$sex[[3]],')')
+  ST_lr[2,((i*6)-3)] <- paste0(lr_train[[i]]$sex[[5]],' (',lr_train[[i]]$sex[[6]],'-',lr_train[[i]]$sex[[7]],')')
+  ST_lr[2,((i*6)-2)] <- lr_test[[i]]$sex[[4]]
+  ST_lr[2,((i*6)-1)] <- paste0(lr_test[[i]]$sex[[1]],' (',lr_test[[i]]$sex[[2]],'-',lr_test[[i]]$sex[[3]],')')
+  ST_lr[2,(i*6)] <- paste0(lr_test[[i]]$sex[[5]],' (',lr_test[[i]]$sex[[6]],'-',lr_test[[i]]$sex[[7]],')')
+  #TDI
+  ST_lr[3,((i*6)-5)] <- lr_train[[i]]$TDI[[4]]
+  ST_lr[3,((i*6)-4)] <- paste0(lr_train[[i]]$TDI[[1]],' (',lr_train[[i]]$TDI[[2]],'-',lr_train[[i]]$TDI[[3]],')')
+  ST_lr[3,((i*6)-3)] <- paste0(lr_train[[i]]$TDI[[5]],' (',lr_train[[i]]$TDI[[6]],'-',lr_train[[i]]$TDI[[7]],')')
+  ST_lr[3,((i*6)-2)] <- lr_test[[i]]$TDI[[4]]
+  ST_lr[3,((i*6)-1)] <- paste0(lr_test[[i]]$TDI[[1]],' (',lr_test[[i]]$TDI[[2]],'-',lr_test[[i]]$TDI[[3]],')')
+  ST_lr[3,(i*6)] <- paste0(lr_test[[i]]$TDI[[5]],' (',lr_test[[i]]$TDI[[6]],'-',lr_test[[i]]$TDI[[7]],')')
+  #BMI
+  ST_lr[4,((i*6)-5)] <- lr_train[[i]]$BMI[[4]]
+  ST_lr[4,((i*6)-4)] <- paste0(lr_train[[i]]$BMI[[1]],' (',lr_train[[i]]$BMI[[2]],'-',lr_train[[i]]$BMI[[3]],')')
+  ST_lr[4,((i*6)-3)] <- paste0(lr_train[[i]]$BMI[[5]],' (',lr_train[[i]]$BMI[[6]],'-',lr_train[[i]]$BMI[[7]],')')
+  ST_lr[4,((i*6)-2)] <- lr_test[[i]]$BMI[[4]]
+  ST_lr[4,((i*6)-1)] <- paste0(lr_test[[i]]$BMI[[1]],' (',lr_test[[i]]$BMI[[2]],'-',lr_test[[i]]$BMI[[3]],')')
+  ST_lr[4,(i*6)] <- paste0(lr_test[[i]]$BMI[[5]],' (',lr_test[[i]]$BMI[[6]],'-',lr_test[[i]]$BMI[[7]],')')
+  #waist_circumference
+  ST_lr[5,((i*6)-5)] <- lr_train[[i]]$waist_circumference[[4]]
+  ST_lr[5,((i*6)-4)] <- paste0(lr_train[[i]]$waist_circumference[[1]],' (',lr_train[[i]]$waist_circumference[[2]],'-',lr_train[[i]]$waist_circumference[[3]],')')
+  ST_lr[5,((i*6)-3)] <- paste0(lr_train[[i]]$waist_circumference[[5]],' (',lr_train[[i]]$waist_circumference[[6]],'-',lr_train[[i]]$waist_circumference[[7]],')')
+  ST_lr[5,((i*6)-2)] <- lr_test[[i]]$waist_circumference[[4]]
+  ST_lr[5,((i*6)-1)] <- paste0(lr_test[[i]]$waist_circumference[[1]],' (',lr_test[[i]]$waist_circumference[[2]],'-',lr_test[[i]]$waist_circumference[[3]],')')
+  ST_lr[5,(i*6)] <- paste0(lr_test[[i]]$waist_circumference[[5]],' (',lr_test[[i]]$waist_circumference[[6]],'-',lr_test[[i]]$waist_circumference[[7]],')')
+  #ever_smoked
+  ST_lr[6,((i*6)-5)] <- lr_train[[i]]$ever_smoked[[4]]
+  ST_lr[6,((i*6)-4)] <- paste0(lr_train[[i]]$ever_smoked[[1]],' (',lr_train[[i]]$ever_smoked[[2]],'-',lr_train[[i]]$ever_smoked[[3]],')')
+  ST_lr[6,((i*6)-3)] <- paste0(lr_train[[i]]$ever_smoked[[5]],' (',lr_train[[i]]$ever_smoked[[6]],'-',lr_train[[i]]$ever_smoked[[7]],')')
+  ST_lr[6,((i*6)-2)] <- lr_test[[i]]$ever_smoked[[4]]
+  ST_lr[6,((i*6)-1)] <- paste0(lr_test[[i]]$ever_smoked[[1]],' (',lr_test[[i]]$ever_smoked[[2]],'-',lr_test[[i]]$ever_smoked[[3]],')')
+  ST_lr[6,(i*6)] <- paste0(lr_test[[i]]$ever_smoked[[5]],' (',lr_test[[i]]$ever_smoked[[6]],'-',lr_test[[i]]$ever_smoked[[7]],')')
+  #SMOKING STATUS
+  ST_lr[8,((i*6)-5)] <- lr_train[[i]]$smoking_status[[4]]
+  ST_lr[8,((i*6)-4)] <- paste0(lr_train[[i]]$smoking_status[[1]],' (',lr_train[[i]]$smoking_status[[2]],'-',lr_train[[i]]$smoking_status[[3]],')')
+  ST_lr[8,((i*6)-3)] <- paste0(lr_train[[i]]$smoking_status[[5]],' (',lr_train[[i]]$smoking_status[[6]],'-',lr_train[[i]]$smoking_status[[7]],')')
+  ST_lr[8,((i*6)-2)] <- lr_test[[i]]$smoking_status[[4]]
+  ST_lr[8,((i*6)-1)] <- paste0(lr_test[[i]]$smoking_status[[1]],' (',lr_test[[i]]$smoking_status[[2]],'-',lr_test[[i]]$smoking_status[[3]],')')
+  ST_lr[8,(i*6)] <- paste0(lr_test[[i]]$smoking_status[[5]],' (',lr_test[[i]]$smoking_status[[6]],'-',lr_test[[i]]$smoking_status[[7]],')')
   
-  #processed meat intake
-  print('processed meat intake')
-  for (j3 in 23:31) {
-    print(j3)
-    if (j3 == 23) {
-      print('never v <1 a week')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == 'Never' |
-                      p_v[[i]]$processed_meat_intake == 'Less than once a week',]
-      basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~processed_meat_intake, x, F)
-    } else if (j3 == 24) {
-      print('never v 1 a week')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == 'Never' |
-                      p_v[[i]]$processed_meat_intake == 'Once a week',]
-      basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~processed_meat_intake, x, F)
-    } else if (j3 == 25) {
-      print('never v 2-4x a week')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == 'Never' |
-                      p_v[[i]]$processed_meat_intake == '2-4 times a week',]
-      basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~processed_meat_intake, x, F)
-    } else if (j3 == 26) {
-      print('never v 5-6x a week')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == 'Never' |
-                      p_v[[i]]$processed_meat_intake == '5-6 times a week',]
-      basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~processed_meat_intake, x, F)
-    } else if (j3 == 27) {
-      print('never v daily')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == 'Never' |
-                      p_v[[i]]$processed_meat_intake == 'Once or more daily',]
-      basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~processed_meat_intake, x, F)
+  ST_lr[9,((i*6)-5)] <- lr_train[[i]]$smoking_status[[11]]
+  ST_lr[9,((i*6)-4)] <- paste0(lr_train[[i]]$smoking_status[[8]],' (',lr_train[[i]]$smoking_status[[9]],'-',lr_train[[i]]$smoking_status[[10]],')')
+  ST_lr[9,((i*6)-3)] <- paste0(lr_train[[i]]$smoking_status[[12]],' (',lr_train[[i]]$smoking_status[[13]],'-',lr_train[[i]]$smoking_status[[14]],')')
+  ST_lr[9,((i*6)-2)] <- lr_test[[i]]$smoking_status[[11]]
+  ST_lr[9,((i*6)-1)] <- paste0(lr_test[[i]]$smoking_status[[8]],' (',lr_test[[i]]$smoking_status[[9]],'-',lr_test[[i]]$smoking_status[[10]],')')
+  ST_lr[9,(i*6)] <- paste0(lr_test[[i]]$smoking_status[[12]],' (',lr_test[[i]]$smoking_status[[13]],'-',lr_test[[i]]$smoking_status[[14]],')')
+  
+  ST_lr[10,((i*6)-5)] <- lr_train[[i]]$smoking_status[[18]]
+  ST_lr[10,((i*6)-4)] <- paste0(lr_train[[i]]$smoking_status[[15]],' (',lr_train[[i]]$smoking_status[[16]],'-',lr_train[[i]]$smoking_status[[17]],')')
+  ST_lr[10,((i*6)-3)] <- paste0(lr_train[[i]]$smoking_status[[19]],' (',lr_train[[i]]$smoking_status[[20]],'-',lr_train[[i]]$smoking_status[[21]],')')
+  ST_lr[10,((i*6)-2)] <- lr_test[[i]]$smoking_status[[18]]
+  ST_lr[10,((i*6)-1)] <- paste0(lr_test[[i]]$smoking_status[[15]],' (',lr_test[[i]]$smoking_status[[16]],'-',lr_test[[i]]$smoking_status[[17]],')')
+  ST_lr[10,(i*6)] <- paste0(lr_test[[i]]$smoking_status[[19]],' (',lr_test[[i]]$smoking_status[[20]],'-',lr_test[[i]]$smoking_status[[21]],')')
+  
+  #ALCOHOL INTAKE
+  ST_lr[12,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[4]]
+  ST_lr[12,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[1]],' (',lr_train[[i]]$alcohol_intake[[2]],'-',lr_train[[i]]$alcohol_intake[[3]],')')
+  ST_lr[12,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[5]],' (',lr_train[[i]]$alcohol_intake[[6]],'-',lr_train[[i]]$alcohol_intake[[7]],')')
+  ST_lr[12,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[4]]
+  ST_lr[12,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[1]],' (',lr_test[[i]]$alcohol_intake[[2]],'-',lr_test[[i]]$alcohol_intake[[3]],')')
+  ST_lr[12,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[5]],' (',lr_test[[i]]$alcohol_intake[[6]],'-',lr_test[[i]]$alcohol_intake[[7]],')')
+  
+  ST_lr[13,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[11]]
+  ST_lr[13,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[8]],' (',lr_train[[i]]$alcohol_intake[[9]],'-',lr_train[[i]]$alcohol_intake[[10]],')')
+  ST_lr[13,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[12]],' (',lr_train[[i]]$alcohol_intake[[13]],'-',lr_train[[i]]$alcohol_intake[[14]],')')
+  ST_lr[13,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[11]]
+  ST_lr[13,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[8]],' (',lr_test[[i]]$alcohol_intake[[9]],'-',lr_test[[i]]$alcohol_intake[[10]],')')
+  ST_lr[13,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[12]],' (',lr_test[[i]]$alcohol_intake[[13]],'-',lr_test[[i]]$alcohol_intake[[14]],')')
+
+  ST_lr[14,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[18]]
+  ST_lr[14,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[15]],' (',lr_train[[i]]$alcohol_intake[[16]],'-',lr_train[[i]]$alcohol_intake[[17]],')')
+  ST_lr[14,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[19]],' (',lr_train[[i]]$alcohol_intake[[20]],'-',lr_train[[i]]$alcohol_intake[[21]],')')
+  ST_lr[14,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[18]]
+  ST_lr[14,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[15]],' (',lr_test[[i]]$alcohol_intake[[16]],'-',lr_test[[i]]$alcohol_intake[[17]],')')
+  ST_lr[14,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[19]],' (',lr_test[[i]]$alcohol_intake[[20]],'-',lr_test[[i]]$alcohol_intake[[21]],')')
+  
+  ST_lr[15,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[25]]
+  ST_lr[15,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[22]],' (',lr_train[[i]]$alcohol_intake[[23]],'-',lr_train[[i]]$alcohol_intake[[24]],')')
+  ST_lr[15,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[26]],' (',lr_train[[i]]$alcohol_intake[[27]],'-',lr_train[[i]]$alcohol_intake[[28]],')')
+  ST_lr[15,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[25]]
+  ST_lr[15,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[22]],' (',lr_test[[i]]$alcohol_intake[[23]],'-',lr_test[[i]]$alcohol_intake[[24]],')')
+  ST_lr[15,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[26]],' (',lr_test[[i]]$alcohol_intake[[27]],'-',lr_test[[i]]$alcohol_intake[[28]],')')
+  
+  ST_lr[16,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[32]]
+  ST_lr[16,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[29]],' (',lr_train[[i]]$alcohol_intake[[30]],'-',lr_train[[i]]$alcohol_intake[[31]],')')
+  ST_lr[16,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[33]],' (',lr_train[[i]]$alcohol_intake[[34]],'-',lr_train[[i]]$alcohol_intake[[35]],')')
+  ST_lr[16,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[32]]
+  ST_lr[16,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[29]],' (',lr_test[[i]]$alcohol_intake[[30]],'-',lr_test[[i]]$alcohol_intake[[31]],')')
+  ST_lr[16,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[33]],' (',lr_test[[i]]$alcohol_intake[[34]],'-',lr_test[[i]]$alcohol_intake[[35]],')')
+  
+  ST_lr[17,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[39]]
+  ST_lr[17,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[36]],' (',lr_train[[i]]$alcohol_intake[[37]],'-',lr_train[[i]]$alcohol_intake[[38]],')')
+  ST_lr[17,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[40]],' (',lr_train[[i]]$alcohol_intake[[41]],'-',lr_train[[i]]$alcohol_intake[[42]],')')
+  ST_lr[17,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[39]]
+  ST_lr[17,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[36]],' (',lr_test[[i]]$alcohol_intake[[37]],'-',lr_test[[i]]$alcohol_intake[[38]],')')
+  ST_lr[17,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[40]],' (',lr_test[[i]]$alcohol_intake[[41]],'-',lr_test[[i]]$alcohol_intake[[42]],')')
+  
+  ST_lr[18,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[46]]
+  ST_lr[18,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[43]],' (',lr_train[[i]]$alcohol_intake[[44]],'-',lr_train[[i]]$alcohol_intake[[45]],')')
+  ST_lr[18,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[47]],' (',lr_train[[i]]$alcohol_intake[[48]],'-',lr_train[[i]]$alcohol_intake[[49]],')')
+  ST_lr[18,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[46]]
+  ST_lr[18,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[43]],' (',lr_test[[i]]$alcohol_intake[[44]],'-',lr_test[[i]]$alcohol_intake[[45]],')')
+  ST_lr[18,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[47]],' (',lr_test[[i]]$alcohol_intake[[48]],'-',lr_test[[i]]$alcohol_intake[[49]],')')
+  
+  ST_lr[19,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[53]]
+  ST_lr[19,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[50]],' (',lr_train[[i]]$alcohol_intake[[51]],'-',lr_train[[i]]$alcohol_intake[[52]],')')
+  ST_lr[19,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[54]],' (',lr_train[[i]]$alcohol_intake[[55]],'-',lr_train[[i]]$alcohol_intake[[56]],')')
+  ST_lr[19,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[53]]
+  ST_lr[19,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[50]],' (',lr_test[[i]]$alcohol_intake[[51]],'-',lr_test[[i]]$alcohol_intake[[52]],')')
+  ST_lr[19,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[54]],' (',lr_test[[i]]$alcohol_intake[[55]],'-',lr_test[[i]]$alcohol_intake[[56]],')')
+  
+  ST_lr[20,((i*6)-5)] <- lr_train[[i]]$alcohol_intake[[60]]
+  ST_lr[20,((i*6)-4)] <- paste0(lr_train[[i]]$alcohol_intake[[57]],' (',lr_train[[i]]$alcohol_intake[[58]],'-',lr_train[[i]]$alcohol_intake[[59]],')')
+  ST_lr[20,((i*6)-3)] <- paste0(lr_train[[i]]$alcohol_intake[[61]],' (',lr_train[[i]]$alcohol_intake[[62]],'-',lr_train[[i]]$alcohol_intake[[63]],')')
+  ST_lr[20,((i*6)-2)] <- lr_test[[i]]$alcohol_intake[[60]]
+  ST_lr[20,((i*6)-1)] <- paste0(lr_test[[i]]$alcohol_intake[[57]],' (',lr_test[[i]]$alcohol_intake[[58]],'-',lr_test[[i]]$alcohol_intake[[59]],')')
+  ST_lr[20,(i*6)] <- paste0(lr_test[[i]]$alcohol_intake[[61]],' (',lr_test[[i]]$alcohol_intake[[62]],'-',lr_test[[i]]$alcohol_intake[[63]],')')
+  
+  #diabetes
+  ST_lr[21,((i*6)-5)] <- lr_train[[i]]$diabetes[[4]]
+  ST_lr[21,((i*6)-4)] <- paste0(lr_train[[i]]$diabetes[[1]],' (',lr_train[[i]]$diabetes[[2]],'-',lr_train[[i]]$diabetes[[3]],')')
+  ST_lr[21,((i*6)-3)] <- paste0(lr_train[[i]]$diabetes[[5]],' (',lr_train[[i]]$diabetes[[6]],'-',lr_train[[i]]$diabetes[[7]],')')
+  ST_lr[21,((i*6)-2)] <- lr_test[[i]]$diabetes[[4]]
+  ST_lr[21,((i*6)-1)] <- paste0(lr_test[[i]]$diabetes[[1]],' (',lr_test[[i]]$diabetes[[2]],'-',lr_test[[i]]$diabetes[[3]],')')
+  ST_lr[21,(i*6)] <- paste0(lr_test[[i]]$diabetes[[5]],' (',lr_test[[i]]$diabetes[[6]],'-',lr_test[[i]]$diabetes[[7]],')')
+  
+  #PROCESSED MEAT INTAKE
+  ST_lr[23,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[4]]
+  ST_lr[23,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[1]],' (',lr_train[[i]]$processed_meat_intake[[2]],'-',lr_train[[i]]$processed_meat_intake[[3]],')')
+  ST_lr[23,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[5]],' (',lr_train[[i]]$processed_meat_intake[[6]],'-',lr_train[[i]]$processed_meat_intake[[7]],')')
+  ST_lr[23,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[4]]
+  ST_lr[23,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[1]],' (',lr_test[[i]]$processed_meat_intake[[2]],'-',lr_test[[i]]$processed_meat_intake[[3]],')')
+  ST_lr[23,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[5]],' (',lr_test[[i]]$processed_meat_intake[[6]],'-',lr_test[[i]]$processed_meat_intake[[7]],')')
+  
+  ST_lr[24,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[11]]
+  ST_lr[24,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[8]],' (',lr_train[[i]]$processed_meat_intake[[9]],'-',lr_train[[i]]$processed_meat_intake[[10]],')')
+  ST_lr[24,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[12]],' (',lr_train[[i]]$processed_meat_intake[[13]],'-',lr_train[[i]]$processed_meat_intake[[14]],')')
+  ST_lr[24,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[11]]
+  ST_lr[24,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[8]],' (',lr_test[[i]]$processed_meat_intake[[9]],'-',lr_test[[i]]$processed_meat_intake[[10]],')')
+  ST_lr[24,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[12]],' (',lr_test[[i]]$processed_meat_intake[[13]],'-',lr_test[[i]]$processed_meat_intake[[14]],')')
+  
+  ST_lr[25,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[18]]
+  ST_lr[25,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[15]],' (',lr_train[[i]]$processed_meat_intake[[16]],'-',lr_train[[i]]$processed_meat_intake[[17]],')')
+  ST_lr[25,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[19]],' (',lr_train[[i]]$processed_meat_intake[[20]],'-',lr_train[[i]]$processed_meat_intake[[21]],')')
+  ST_lr[25,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[18]]
+  ST_lr[25,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[15]],' (',lr_test[[i]]$processed_meat_intake[[16]],'-',lr_test[[i]]$processed_meat_intake[[17]],')')
+  ST_lr[25,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[19]],' (',lr_test[[i]]$processed_meat_intake[[20]],'-',lr_test[[i]]$processed_meat_intake[[21]],')')
+  
+  ST_lr[26,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[25]]
+  ST_lr[26,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[22]],' (',lr_train[[i]]$processed_meat_intake[[23]],'-',lr_train[[i]]$processed_meat_intake[[24]],')')
+  ST_lr[26,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[26]],' (',lr_train[[i]]$processed_meat_intake[[27]],'-',lr_train[[i]]$processed_meat_intake[[28]],')')
+  ST_lr[26,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[25]]
+  ST_lr[26,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[22]],' (',lr_test[[i]]$processed_meat_intake[[23]],'-',lr_test[[i]]$processed_meat_intake[[24]],')')
+  ST_lr[26,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[26]],' (',lr_test[[i]]$processed_meat_intake[[27]],'-',lr_test[[i]]$processed_meat_intake[[28]],')')
+  
+  ST_lr[27,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[32]]
+  ST_lr[27,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[29]],' (',lr_train[[i]]$processed_meat_intake[[30]],'-',lr_train[[i]]$processed_meat_intake[[31]],')')
+  ST_lr[27,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[33]],' (',lr_train[[i]]$processed_meat_intake[[34]],'-',lr_train[[i]]$processed_meat_intake[[35]],')')
+  ST_lr[27,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[32]]
+  ST_lr[27,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[29]],' (',lr_test[[i]]$processed_meat_intake[[30]],'-',lr_test[[i]]$processed_meat_intake[[31]],')')
+  ST_lr[27,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[33]],' (',lr_test[[i]]$processed_meat_intake[[34]],'-',lr_test[[i]]$processed_meat_intake[[35]],')')
+  
+  ST_lr[28,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[39]]
+  ST_lr[28,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[36]],' (',lr_train[[i]]$processed_meat_intake[[37]],'-',lr_train[[i]]$processed_meat_intake[[38]],')')
+  ST_lr[28,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[40]],' (',lr_train[[i]]$processed_meat_intake[[41]],'-',lr_train[[i]]$processed_meat_intake[[42]],')')
+  ST_lr[28,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[39]]
+  ST_lr[28,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[36]],' (',lr_test[[i]]$processed_meat_intake[[37]],'-',lr_test[[i]]$processed_meat_intake[[38]],')')
+  ST_lr[28,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[40]],' (',lr_test[[i]]$processed_meat_intake[[41]],'-',lr_test[[i]]$processed_meat_intake[[42]],')')
+  
+  ST_lr[29,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[46]]
+  ST_lr[29,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[43]],' (',lr_train[[i]]$processed_meat_intake[[44]],'-',lr_train[[i]]$processed_meat_intake[[45]],')')
+  ST_lr[29,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[47]],' (',lr_train[[i]]$processed_meat_intake[[48]],'-',lr_train[[i]]$processed_meat_intake[[49]],')')
+  ST_lr[29,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[46]]
+  ST_lr[29,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[43]],' (',lr_test[[i]]$processed_meat_intake[[44]],'-',lr_test[[i]]$processed_meat_intake[[45]],')')
+  ST_lr[29,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[47]],' (',lr_test[[i]]$processed_meat_intake[[48]],'-',lr_test[[i]]$processed_meat_intake[[49]],')')
+  
+  ST_lr[30,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[53]]
+  ST_lr[30,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[50]],' (',lr_train[[i]]$processed_meat_intake[[51]],'-',lr_train[[i]]$processed_meat_intake[[52]],')')
+  ST_lr[30,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[54]],' (',lr_train[[i]]$processed_meat_intake[[55]],'-',lr_train[[i]]$processed_meat_intake[[56]],')')
+  ST_lr[30,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[53]]
+  ST_lr[30,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[50]],' (',lr_test[[i]]$processed_meat_intake[[51]],'-',lr_test[[i]]$processed_meat_intake[[52]],')')
+  ST_lr[30,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[54]],' (',lr_test[[i]]$processed_meat_intake[[55]],'-',lr_test[[i]]$processed_meat_intake[[56]],')')
+  
+  ST_lr[31,((i*6)-5)] <- lr_train[[i]]$processed_meat_intake[[60]]
+  ST_lr[31,((i*6)-4)] <- paste0(lr_train[[i]]$processed_meat_intake[[57]],' (',lr_train[[i]]$processed_meat_intake[[58]],'-',lr_train[[i]]$processed_meat_intake[[59]],')')
+  ST_lr[31,((i*6)-3)] <- paste0(lr_train[[i]]$processed_meat_intake[[61]],' (',lr_train[[i]]$processed_meat_intake[[62]],'-',lr_train[[i]]$processed_meat_intake[[63]],')')
+  ST_lr[31,((i*6)-2)] <- lr_test[[i]]$processed_meat_intake[[60]]
+  ST_lr[31,((i*6)-1)] <- paste0(lr_test[[i]]$processed_meat_intake[[57]],' (',lr_test[[i]]$processed_meat_intake[[58]],'-',lr_test[[i]]$processed_meat_intake[[59]],')')
+  ST_lr[31,(i*6)] <- paste0(lr_test[[i]]$processed_meat_intake[[61]],' (',lr_test[[i]]$processed_meat_intake[[62]],'-',lr_test[[i]]$processed_meat_intake[[63]],')')
+  
+ #PC1
+  ST_lr[32,((i*6)-5)] <- lr_train[[i]]$PC1[[4]]
+  ST_lr[32,((i*6)-4)] <- paste0(lr_train[[i]]$PC1[[1]],' (',lr_train[[i]]$PC1[[2]],'-',lr_train[[i]]$PC1[[3]],')')
+  ST_lr[32,((i*6)-3)] <- paste0(lr_train[[i]]$PC1[[5]],' (',lr_train[[i]]$PC1[[6]],'-',lr_train[[i]]$PC1[[7]],')')
+  ST_lr[32,((i*6)-2)] <- lr_test[[i]]$PC1[[4]]
+  ST_lr[32,((i*6)-1)] <- paste0(lr_test[[i]]$PC1[[1]],' (',lr_test[[i]]$PC1[[2]],'-',lr_test[[i]]$PC1[[3]],')')
+  ST_lr[32,(i*6)] <- paste0(lr_test[[i]]$PC1[[5]],' (',lr_test[[i]]$PC1[[6]],'-',lr_test[[i]]$PC1[[7]],')')
+  #PC3
+  ST_lr[33,((i*6)-5)] <- lr_train[[i]]$PC3[[4]]
+  ST_lr[33,((i*6)-4)] <- paste0(lr_train[[i]]$PC3[[1]],' (',lr_train[[i]]$PC3[[2]],'-',lr_train[[i]]$PC3[[3]],')')
+  ST_lr[33,((i*6)-3)] <- paste0(lr_train[[i]]$PC3[[5]],' (',lr_train[[i]]$PC3[[6]],'-',lr_train[[i]]$PC3[[7]],')')
+  ST_lr[33,((i*6)-2)] <- lr_test[[i]]$PC3[[4]]
+  ST_lr[33,((i*6)-1)] <- paste0(lr_test[[i]]$PC3[[1]],' (',lr_test[[i]]$PC3[[2]],'-',lr_test[[i]]$PC3[[3]],')')
+  ST_lr[33,(i*6)] <- paste0(lr_test[[i]]$PC3[[5]],' (',lr_test[[i]]$PC3[[6]],'-',lr_test[[i]]$PC3[[7]],')')
+  #PC2
+  ST_lr[34,((i*6)-5)] <- lr_train[[i]]$PC2[[4]]
+  ST_lr[34,((i*6)-4)] <- paste0(lr_train[[i]]$PC2[[1]],' (',lr_train[[i]]$PC2[[2]],'-',lr_train[[i]]$PC2[[3]],')')
+  ST_lr[34,((i*6)-3)] <- paste0(lr_train[[i]]$PC2[[5]],' (',lr_train[[i]]$PC2[[6]],'-',lr_train[[i]]$PC2[[7]],')')
+  ST_lr[34,((i*6)-2)] <- lr_test[[i]]$PC2[[4]]
+  ST_lr[34,((i*6)-1)] <- paste0(lr_test[[i]]$PC2[[1]],' (',lr_test[[i]]$PC2[[2]],'-',lr_test[[i]]$PC2[[3]],')')
+  ST_lr[34,(i*6)] <- paste0(lr_test[[i]]$PC2[[5]],' (',lr_test[[i]]$PC2[[6]],'-',lr_test[[i]]$PC2[[7]],')')
+  #PC4
+  ST_lr[35,((i*6)-5)] <- lr_train[[i]]$PC4[[4]]
+  ST_lr[35,((i*6)-4)] <- paste0(lr_train[[i]]$PC4[[1]],' (',lr_train[[i]]$PC4[[2]],'-',lr_train[[i]]$PC4[[3]],')')
+  ST_lr[35,((i*6)-3)] <- paste0(lr_train[[i]]$PC4[[5]],' (',lr_train[[i]]$PC4[[6]],'-',lr_train[[i]]$PC4[[7]],')')
+  ST_lr[35,((i*6)-2)] <- lr_test[[i]]$PC4[[4]]
+  ST_lr[35,((i*6)-1)] <- paste0(lr_test[[i]]$PC4[[1]],' (',lr_test[[i]]$PC4[[2]],'-',lr_test[[i]]$PC4[[3]],')')
+  ST_lr[35,(i*6)] <- paste0(lr_test[[i]]$PC4[[5]],' (',lr_test[[i]]$PC4[[6]],'-',lr_test[[i]]$PC4[[7]],')')
+  #PC5
+  ST_lr[36,((i*6)-5)] <- lr_train[[i]]$PC5[[4]]
+  ST_lr[36,((i*6)-4)] <- paste0(lr_train[[i]]$PC5[[1]],' (',lr_train[[i]]$PC5[[2]],'-',lr_train[[i]]$PC5[[3]],')')
+  ST_lr[36,((i*6)-3)] <- paste0(lr_train[[i]]$PC5[[5]],' (',lr_train[[i]]$PC5[[6]],'-',lr_train[[i]]$PC5[[7]],')')
+  ST_lr[36,((i*6)-2)] <- lr_test[[i]]$PC5[[4]]
+  ST_lr[36,((i*6)-1)] <- paste0(lr_test[[i]]$PC5[[1]],' (',lr_test[[i]]$PC5[[2]],'-',lr_test[[i]]$PC5[[3]],')')
+  ST_lr[36,(i*6)] <- paste0(lr_test[[i]]$PC5[[5]],' (',lr_test[[i]]$PC5[[6]],'-',lr_test[[i]]$PC5[[7]],')')
+  #fh_mat
+  ST_lr[37,((i*6)-5)] <- lr_train[[i]]$fh_mat[[4]]
+  ST_lr[37,((i*6)-4)] <- paste0(lr_train[[i]]$fh_mat[[1]],' (',lr_train[[i]]$fh_mat[[2]],'-',lr_train[[i]]$fh_mat[[3]],')')
+  ST_lr[37,((i*6)-3)] <- paste0(lr_train[[i]]$fh_mat[[5]],' (',lr_train[[i]]$fh_mat[[6]],'-',lr_train[[i]]$fh_mat[[7]],')')
+  ST_lr[37,((i*6)-2)] <- lr_test[[i]]$fh_mat[[4]]
+  ST_lr[37,((i*6)-1)] <- paste0(lr_test[[i]]$fh_mat[[1]],' (',lr_test[[i]]$fh_mat[[2]],'-',lr_test[[i]]$fh_mat[[3]],')')
+  ST_lr[37,(i*6)] <- paste0(lr_test[[i]]$fh_mat[[5]],' (',lr_test[[i]]$fh_mat[[6]],'-',lr_test[[i]]$fh_mat[[7]],')')
+  #fh_pat
+  ST_lr[38,((i*6)-5)] <- lr_train[[i]]$fh_pat[[4]]
+  ST_lr[38,((i*6)-4)] <- paste0(lr_train[[i]]$fh_pat[[1]],' (',lr_train[[i]]$fh_pat[[2]],'-',lr_train[[i]]$fh_pat[[3]],')')
+  ST_lr[38,((i*6)-3)] <- paste0(lr_train[[i]]$fh_pat[[5]],' (',lr_train[[i]]$fh_pat[[6]],'-',lr_train[[i]]$fh_pat[[7]],')')
+  ST_lr[38,((i*6)-2)] <- lr_test[[i]]$fh_pat[[4]]
+  ST_lr[38,((i*6)-1)] <- paste0(lr_test[[i]]$fh_pat[[1]],' (',lr_test[[i]]$fh_pat[[2]],'-',lr_test[[i]]$fh_pat[[3]],')')
+  ST_lr[38,(i*6)] <- paste0(lr_test[[i]]$fh_pat[[5]],' (',lr_test[[i]]$fh_pat[[6]],'-',lr_test[[i]]$fh_pat[[7]],')')
+  #fh
+  ST_lr[39,((i*6)-5)] <- lr_train[[i]]$fh[[4]]
+  ST_lr[39,((i*6)-4)] <- paste0(lr_train[[i]]$fh[[1]],' (',lr_train[[i]]$fh[[2]],'-',lr_train[[i]]$fh[[3]],')')
+  ST_lr[39,((i*6)-3)] <- paste0(lr_train[[i]]$fh[[5]],' (',lr_train[[i]]$fh[[6]],'-',lr_train[[i]]$fh[[7]],')')
+  ST_lr[39,((i*6)-2)] <- lr_test[[i]]$fh[[4]]
+  ST_lr[39,((i*6)-1)] <- paste0(lr_test[[i]]$fh[[1]],' (',lr_test[[i]]$fh[[2]],'-',lr_test[[i]]$fh[[3]],')')
+  ST_lr[39,(i*6)] <- paste0(lr_test[[i]]$fh[[5]],' (',lr_test[[i]]$fh[[6]],'-',lr_test[[i]]$fh[[7]],')')
+  #weightloss
+  ST_lr[40,((i*6)-5)] <- lr_train[[i]]$weightloss[[4]]
+  ST_lr[40,((i*6)-4)] <- paste0(lr_train[[i]]$weightloss[[1]],' (',lr_train[[i]]$weightloss[[2]],'-',lr_train[[i]]$weightloss[[3]],')')
+  ST_lr[40,((i*6)-3)] <- paste0(lr_train[[i]]$weightloss[[5]],' (',lr_train[[i]]$weightloss[[6]],'-',lr_train[[i]]$weightloss[[7]],')')
+  ST_lr[40,((i*6)-2)] <- lr_test[[i]]$weightloss[[4]]
+  ST_lr[40,((i*6)-1)] <- paste0(lr_test[[i]]$weightloss[[1]],' (',lr_test[[i]]$weightloss[[2]],'-',lr_test[[i]]$weightloss[[3]],')')
+  ST_lr[40,(i*6)] <- paste0(lr_test[[i]]$weightloss[[5]],' (',lr_test[[i]]$weightloss[[6]],'-',lr_test[[i]]$weightloss[[7]],')')
+  #unintentional_weightloss
+  ST_lr[41,((i*6)-5)] <- lr_train[[i]]$unintentional_weightloss[[4]]
+  ST_lr[41,((i*6)-4)] <- paste0(lr_train[[i]]$unintentional_weightloss[[1]],' (',lr_train[[i]]$unintentional_weightloss[[2]],'-',lr_train[[i]]$unintentional_weightloss[[3]],')')
+  ST_lr[41,((i*6)-3)] <- paste0(lr_train[[i]]$unintentional_weightloss[[5]],' (',lr_train[[i]]$unintentional_weightloss[[6]],'-',lr_train[[i]]$unintentional_weightloss[[7]],')')
+  ST_lr[41,((i*6)-2)] <- lr_test[[i]]$unintentional_weightloss[[4]]
+  ST_lr[41,((i*6)-1)] <- paste0(lr_test[[i]]$unintentional_weightloss[[1]],' (',lr_test[[i]]$unintentional_weightloss[[2]],'-',lr_test[[i]]$unintentional_weightloss[[3]],')')
+  ST_lr[41,(i*6)] <- paste0(lr_test[[i]]$unintentional_weightloss[[5]],' (',lr_test[[i]]$unintentional_weightloss[[6]],'-',lr_test[[i]]$unintentional_weightloss[[7]],')')
+  #other_weightloss
+  ST_lr[42,((i*6)-5)] <- lr_train[[i]]$other_weightloss[[4]]
+  ST_lr[42,((i*6)-4)] <- paste0(lr_train[[i]]$other_weightloss[[1]],' (',lr_train[[i]]$other_weightloss[[2]],'-',lr_train[[i]]$other_weightloss[[3]],')')
+  ST_lr[42,((i*6)-3)] <- paste0(lr_train[[i]]$other_weightloss[[5]],' (',lr_train[[i]]$other_weightloss[[6]],'-',lr_train[[i]]$other_weightloss[[7]],')')
+  ST_lr[42,((i*6)-2)] <- lr_test[[i]]$other_weightloss[[4]]
+  ST_lr[42,((i*6)-1)] <- paste0(lr_test[[i]]$other_weightloss[[1]],' (',lr_test[[i]]$other_weightloss[[2]],'-',lr_test[[i]]$other_weightloss[[3]],')')
+  ST_lr[42,(i*6)] <- paste0(lr_test[[i]]$other_weightloss[[5]],' (',lr_test[[i]]$other_weightloss[[6]],'-',lr_test[[i]]$other_weightloss[[7]],')')
+  #loss_appetite
+  ST_lr[43,((i*6)-5)] <- lr_train[[i]]$loss_appetite[[4]]
+  ST_lr[43,((i*6)-4)] <- paste0(lr_train[[i]]$loss_appetite[[1]],' (',lr_train[[i]]$loss_appetite[[2]],'-',lr_train[[i]]$loss_appetite[[3]],')')
+  ST_lr[43,((i*6)-3)] <- paste0(lr_train[[i]]$loss_appetite[[5]],' (',lr_train[[i]]$loss_appetite[[6]],'-',lr_train[[i]]$loss_appetite[[7]],')')
+  ST_lr[43,((i*6)-2)] <- lr_test[[i]]$loss_appetite[[4]]
+  ST_lr[43,((i*6)-1)] <- paste0(lr_test[[i]]$loss_appetite[[1]],' (',lr_test[[i]]$loss_appetite[[2]],'-',lr_test[[i]]$loss_appetite[[3]],')')
+  ST_lr[43,(i*6)] <- paste0(lr_test[[i]]$loss_appetite[[5]],' (',lr_test[[i]]$loss_appetite[[6]],'-',lr_test[[i]]$loss_appetite[[7]],')')
+  #iron_def
+  ST_lr[44,((i*6)-5)] <- lr_train[[i]]$iron_def[[4]]
+  ST_lr[44,((i*6)-4)] <- paste0(lr_train[[i]]$iron_def[[1]],' (',lr_train[[i]]$iron_def[[2]],'-',lr_train[[i]]$iron_def[[3]],')')
+  ST_lr[44,((i*6)-3)] <- paste0(lr_train[[i]]$iron_def[[5]],' (',lr_train[[i]]$iron_def[[6]],'-',lr_train[[i]]$iron_def[[7]],')')
+  ST_lr[44,((i*6)-2)] <- lr_test[[i]]$iron_def[[4]]
+  ST_lr[44,((i*6)-1)] <- paste0(lr_test[[i]]$iron_def[[1]],' (',lr_test[[i]]$iron_def[[2]],'-',lr_test[[i]]$iron_def[[3]],')')
+  ST_lr[44,(i*6)] <- paste0(lr_test[[i]]$iron_def[[5]],' (',lr_test[[i]]$iron_def[[6]],'-',lr_test[[i]]$iron_def[[7]],')')
+#abdo_mass
+  ST_lr[45,((i*6)-5)] <- lr_train[[i]]$abdo_mass[[4]]
+  ST_lr[45,((i*6)-4)] <- paste0(lr_train[[i]]$abdo_mass[[1]],' (',lr_train[[i]]$abdo_mass[[2]],'-',lr_train[[i]]$abdo_mass[[3]],')')
+  ST_lr[45,((i*6)-3)] <- paste0(lr_train[[i]]$abdo_mass[[5]],' (',lr_train[[i]]$abdo_mass[[6]],'-',lr_train[[i]]$abdo_mass[[7]],')')
+  ST_lr[45,((i*6)-2)] <- lr_test[[i]]$abdo_mass[[4]]
+  ST_lr[45,((i*6)-1)] <- paste0(lr_test[[i]]$abdo_mass[[1]],' (',lr_test[[i]]$abdo_mass[[2]],'-',lr_test[[i]]$abdo_mass[[3]],')')
+  ST_lr[45,(i*6)] <- paste0(lr_test[[i]]$abdo_mass[[5]],' (',lr_test[[i]]$abdo_mass[[6]],'-',lr_test[[i]]$abdo_mass[[7]],')')
+  #abdo_pain
+  ST_lr[46,((i*6)-5)] <- lr_train[[i]]$abdo_pain[[4]]
+  ST_lr[46,((i*6)-4)] <- paste0(lr_train[[i]]$abdo_pain[[1]],' (',lr_train[[i]]$abdo_pain[[2]],'-',lr_train[[i]]$abdo_pain[[3]],')')
+  ST_lr[46,((i*6)-3)] <- paste0(lr_train[[i]]$abdo_pain[[5]],' (',lr_train[[i]]$abdo_pain[[6]],'-',lr_train[[i]]$abdo_pain[[7]],')')
+  ST_lr[46,((i*6)-2)] <- lr_test[[i]]$abdo_pain[[4]]
+  ST_lr[46,((i*6)-1)] <- paste0(lr_test[[i]]$abdo_pain[[1]],' (',lr_test[[i]]$abdo_pain[[2]],'-',lr_test[[i]]$abdo_pain[[3]],')')
+  ST_lr[46,(i*6)] <- paste0(lr_test[[i]]$abdo_pain[[5]],' (',lr_test[[i]]$abdo_pain[[6]],'-',lr_test[[i]]$abdo_pain[[7]],')')
+  #rectal_bloodloss
+  ST_lr[47,((i*6)-5)] <- lr_train[[i]]$rectal_bloodloss[[4]]
+  ST_lr[47,((i*6)-4)] <- paste0(lr_train[[i]]$rectal_bloodloss[[1]],' (',lr_train[[i]]$rectal_bloodloss[[2]],'-',lr_train[[i]]$rectal_bloodloss[[3]],')')
+  ST_lr[47,((i*6)-3)] <- paste0(lr_train[[i]]$rectal_bloodloss[[5]],' (',lr_train[[i]]$rectal_bloodloss[[6]],'-',lr_train[[i]]$rectal_bloodloss[[7]],')')
+  ST_lr[47,((i*6)-2)] <- lr_test[[i]]$rectal_bloodloss[[4]]
+  ST_lr[47,((i*6)-1)] <- paste0(lr_test[[i]]$rectal_bloodloss[[1]],' (',lr_test[[i]]$rectal_bloodloss[[2]],'-',lr_test[[i]]$rectal_bloodloss[[3]],')')
+  ST_lr[47,(i*6)] <- paste0(lr_test[[i]]$rectal_bloodloss[[5]],' (',lr_test[[i]]$rectal_bloodloss[[6]],'-',lr_test[[i]]$rectal_bloodloss[[7]],')')
+  #change_bowel_habit
+  ST_lr[48,((i*6)-5)] <- lr_train[[i]]$change_bowel_habit[[4]]
+  ST_lr[48,((i*6)-4)] <- paste0(lr_train[[i]]$change_bowel_habit[[1]],' (',lr_train[[i]]$change_bowel_habit[[2]],'-',lr_train[[i]]$change_bowel_habit[[3]],')')
+  ST_lr[48,((i*6)-3)] <- paste0(lr_train[[i]]$change_bowel_habit[[5]],' (',lr_train[[i]]$change_bowel_habit[[6]],'-',lr_train[[i]]$change_bowel_habit[[7]],')')
+  ST_lr[48,((i*6)-2)] <- lr_test[[i]]$change_bowel_habit[[4]]
+  ST_lr[48,((i*6)-1)] <- paste0(lr_test[[i]]$change_bowel_habit[[1]],' (',lr_test[[i]]$change_bowel_habit[[2]],'-',lr_test[[i]]$change_bowel_habit[[3]],')')
+  ST_lr[48,(i*6)] <- paste0(lr_test[[i]]$change_bowel_habit[[5]],' (',lr_test[[i]]$change_bowel_habit[[6]],'-',lr_test[[i]]$change_bowel_habit[[7]],')')
+  #haemoglobin
+  ST_lr[49,((i*6)-5)] <- lr_train[[i]]$haemoglobin[[4]]
+  ST_lr[49,((i*6)-4)] <- paste0(lr_train[[i]]$haemoglobin[[1]],' (',lr_train[[i]]$haemoglobin[[2]],'-',lr_train[[i]]$haemoglobin[[3]],')')
+  ST_lr[49,((i*6)-3)] <- paste0(lr_train[[i]]$haemoglobin[[5]],' (',lr_train[[i]]$haemoglobin[[6]],'-',lr_train[[i]]$haemoglobin[[7]],')')
+  ST_lr[49,((i*6)-2)] <- lr_test[[i]]$haemoglobin[[4]]
+  ST_lr[49,((i*6)-1)] <- paste0(lr_test[[i]]$haemoglobin[[1]],' (',lr_test[[i]]$haemoglobin[[2]],'-',lr_test[[i]]$haemoglobin[[3]],')')
+  ST_lr[49,(i*6)] <- paste0(lr_test[[i]]$haemoglobin[[5]],' (',lr_test[[i]]$haemoglobin[[6]],'-',lr_test[[i]]$haemoglobin[[7]],')')
+  #grs
+  ST_lr[50,((i*6)-5)] <- lr_train[[i]]$grs[[4]]
+  ST_lr[50,((i*6)-4)] <- paste0(lr_train[[i]]$grs[[1]],' (',lr_train[[i]]$grs[[2]],'-',lr_train[[i]]$grs[[3]],')')
+  ST_lr[50,((i*6)-3)] <- paste0(lr_train[[i]]$grs[[5]],' (',lr_train[[i]]$grs[[6]],'-',lr_train[[i]]$grs[[7]],')')
+  ST_lr[50,((i*6)-2)] <- lr_test[[i]]$grs[[4]]
+  ST_lr[50,((i*6)-1)] <- paste0(lr_test[[i]]$grs[[1]],' (',lr_test[[i]]$grs[[2]],'-',lr_test[[i]]$grs[[3]],')')
+  ST_lr[50,(i*6)] <- paste0(lr_test[[i]]$grs[[5]],' (',lr_test[[i]]$grs[[6]],'-',lr_test[[i]]$grs[[7]],')')
+  
+}
+
+for (i in 1:ncol(ST_lr)) {
+  for (j in 1:nrow(ST_lr)) {
+    if (is.na(ST_lr[j,i])) {
+      ST_lr[j,i] <- ''
+    } else if (ST_lr[j,i] == 'NA (NA-NA)') {
+      ST_lr[j,i] <- ''
     }
-    else if (j3 == 28) {
-      print('<1 x week v 1 a week')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == 'Less than once a week' |
-                      p_v[[i]]$processed_meat_intake == 'Once a week',]
-      basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~processed_meat_intake, x, F)
-    } else if (j3 == 29) {
-      print('1 a week v 2-4 x week')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == 'Once a week' |
-                      p_v[[i]]$processed_meat_intake == '2-4 times a week',]
-      basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~processed_meat_intake, x, F)
-    } else if (j3 == 30) {
-      print('2-4 x week v 5-6 x week')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == '2-4 times a week' |
-                      p_v[[i]]$processed_meat_intake == '5-6 times a week',]
-      basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-      basemod2 <- rocauc(case~processed_meat_intake, x, F)
-    } else if (j3 == 31) {
-      print('5-6 x week v daily')
-      x <- p_v[[i]][p_v[[i]]$processed_meat_intake == '5-6 times a week' |
-                      p_v[[i]]$processed_meat_intake == 'Once or more daily',]
-      if (i != 8 & i != 12 & i != 14) { #because p_4049_f, p_6069_f and p_7079_f didn't have enough data for this calculation
-        basemod <- glm(case~processed_meat_intake,data=x,family=binomial) %>% summary()
-        basemod2 <- rocauc(case~processed_meat_intake, x, F)
-      }
-    }
-    if (i != 8 & i != 12 & i != 14) {
-      ST_lr[j3,((i*3)-2)] <- (signif(basemod$coefficients[2,4],2))
-    print('p complete')
-    ST_lr[j3,((i*3)-1)] <- paste0(round(exp(basemod$coefficients[2,1]),2),
-                                 ' (',
-                                 round(exp(basemod$coefficients[2,1]-1.96*basemod$coefficients[2,2]),2),
-                                 '-',
-                                 round(exp(basemod$coefficients[2,1]+1.96*basemod$coefficients[2,2]),2),
-                                 ')')
-    print('LR complete')
-    ST_lr[j3,(i*3)] <- paste0(round(basemod2$ci[2],2),
-                             ' (',
-                             round(basemod2$ci[1],2),'-',
-                             round(basemod2$ci[3],2),')')
-    print('ROCAUC complete')
-    }
-  }
-  #32 - 51: other variables
-  for (j4 in 32:51) {
-    print(j4)
-    print(names(rocauc_v[[i]][[(j4-21)]]))
-    ST_lr[j4,((i*3)-2)] <- rocauc_v[[i]][[(j4-21)]]$p
-    print('p complete')
-    ST_lr[j4,((i*3)-1)] <- paste0(round(rocauc_v[[i]][[(j4-21)]]$OR, 2),
-                                 ' (',
-                                 round(rocauc_v[[i]][[(j4-21)]]$L95, 2),'-',
-                                 round(rocauc_v[[i]][[(j4-21)]]$U95, 2),')')
-    print('LR complete')
-    ST_lr[j4,(i*3)] <- paste0(round(rocauc_v[[i]][[(j4-21)]][[5]], 2),
-                             ' (',
-                             round(rocauc_v[[i]][[(j4-21)]][[6]], 2),'-',
-                             round(rocauc_v[[i]][[(j4-21)]][[7]], 2),')')
-    print('ROCAUC complete')
   }
 }
 
-colnames(ST_lr) <- rep(names(p_v),each=3)
+ST_lr_titles <- matrix(rep('',15*3*2), ncol=15*3*2, byrow=TRUE)
+ST_lr_titles[1,] <- rep(c('p-value','odds ratio','ROCAUC'),times=(15*2))
 
-write.csv(ST_lr, "ST_6.csv", row.names=T)
+ST_lr_2 <- rbind(ST_lr_titles,ST_lr)
+
+write.csv(ST_lr_2, "ST6.csv", row.names = TRUE)
 
