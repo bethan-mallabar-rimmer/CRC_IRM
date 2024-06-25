@@ -1,3 +1,8 @@
+#required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
+#p_v_train and p_v_test from Section 7
+
+#TABLE 4
+#========
 #install.packages('pROC')
 library('pROC')
 library('dplyr')
