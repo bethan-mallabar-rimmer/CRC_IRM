@@ -23,5 +23,3 @@ Abbreviations: AIC, Akaike information criterion, CRC = colorectal cancer, ROCAU
 The **find_read_codes** folder contains an R function which takes read codes as input and returns similar read codes.</p>
 
 **CRC_read_codes** contains some of the 227 Read codes for CRC symptoms which were used to include participants in this study (others are available upon request - see folder readme file), and the list of 49 Read codes used to identify cases of CRC in participants' GP records.</p>
-
-**tables_and_figures** will contain code used to generate all tables and figures (including supplementary). (Currently a work in progress)
