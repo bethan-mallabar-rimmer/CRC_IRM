@@ -1,152 +1,334 @@
 #required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
-#p_v from Section 6
+#p_v, p_v_train, and p_v_test from Section 7
 
-#cohort numbers
 #==============
-ST_c <- matrix(rep(NA, times=(14*15*3)), ncol=15*3, byrow=TRUE)
+#cohort numbers (incl. BMI, waist circumference and TDI)
+#==============
+ST_c <- matrix(rep('', times=(14*15*3*3)), ncol=15*3*3, byrow=TRUE)
 
 for (i in 1:15) {
   print(i)
-  #cases
-  #N
-  ST_c[1,((i*3)-2)] <- paste0(sum(p_v[[i]]$case == 1),
+  #cases - all
+  ST_c[1,((i*9)-8)] <- paste0(sum(na.rm=TRUE,p_v[[i]]$case == 1),
                               ' (',
-                              round(sum(p_v[[i]]$case == 1)/nrow(p_v[[i]])*100,2),
+                              round(sum(na.rm=TRUE,p_v[[i]]$case == 1)/nrow(p_v[[i]])*100,2),
                               '%)')
-  #sex
-  ST_c[3,((i*3)-2)] <- paste0(sum(p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 1),
+  ST_c[3,((i*9)-8)] <- paste0(sum(na.rm=TRUE,p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 1),
                                ' (',
-                               round(sum(p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 1)/sum(p_v[[i]]$case == 1)*100,2),
+                               round(sum(na.rm=TRUE,p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 1)/sum(na.rm=TRUE,p_v[[i]]$case == 1)*100,2),
                                '%)')
-  ST_c[4,((i*3)-2)] <- paste0(sum(p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 1),
+  ST_c[4,((i*9)-8)] <- paste0(sum(na.rm=TRUE,p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 1),
                                ' (',
-                               round(sum(p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 1)/sum(p_v[[i]]$case == 1)*100,2),
+                               round(sum(na.rm=TRUE,p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 1)/sum(na.rm=TRUE,p_v[[i]]$case == 1)*100,2),
                                '%)')
-  #age at recruitment
-  ST_c[6,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$recruitment_age[p_v[[i]]$case == 1]),2),
+  ST_c[6,((i*9)-8)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$recruitment_age[p_v[[i]]$case == 1]),2),
                               ' (+/- ',
-                              round(sd(p_v[[i]]$recruitment_age[p_v[[i]]$case == 1]),2),
+                              round(sd(na.rm=TRUE,p_v[[i]]$recruitment_age[p_v[[i]]$case == 1]),2),
                               ')')
-  #age at first symptom
-  ST_c[8,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$sym_age[p_v[[i]]$case == 1]),2),
+  ST_c[8,((i*9)-8)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$sym_age[p_v[[i]]$case == 1]),2),
                               ' (+/- ',
-                              round(sd(p_v[[i]]$sym_age[p_v[[i]]$case == 1]),2),
+                              round(sd(na.rm=TRUE,p_v[[i]]$sym_age[p_v[[i]]$case == 1]),2),
                               ')')
-
-  #bmi
-  ST_c[10,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$BMI[p_v[[i]]$case == 1], na.rm = T),2),
+  ST_c[10,((i*9)-8)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$BMI[p_v[[i]]$case == 1]),2),
                               ' (+/- ',
-                              round(sd(p_v[[i]]$BMI[p_v[[i]]$case == 1], na.rm = T),2),
+                              round(sd(na.rm=TRUE,p_v[[i]]$BMI[p_v[[i]]$case == 1]),2),
                               ')')
-  
-  #waist circumference
-  ST_c[12,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$waist_circumference[p_v[[i]]$case == 1], na.rm = T),2),
-                              ' (+/- ',
-                              round(sd(p_v[[i]]$waist_circumference[p_v[[i]]$case == 1], na.rm = T),2),
-                              ')')
-  #townsend deprivation index
-  ST_c[14,((i*3)-2)] <- paste0(round(mean(p_v[[i]]$TDI[p_v[[i]]$case == 1], na.rm = T),2),
+  ST_c[12,((i*9)-8)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$waist_circumference[p_v[[i]]$case == 1]),2),
                                ' (+/- ',
-                               round(sd(p_v[[i]]$TDI[p_v[[i]]$case == 1], na.rm = T),2),
+                               round(sd(na.rm=TRUE,p_v[[i]]$waist_circumference[p_v[[i]]$case == 1]),2),
                                ')')
-
-  #controls
-  #N
-  ST_c[1,((i*3)-1)] <- paste0(sum(p_v[[i]]$case == 0),
+  ST_c[14,((i*9)-8)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$TDI[p_v[[i]]$case == 1]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v[[i]]$TDI[p_v[[i]]$case == 1]),2),
+                               ')')
+  #controls - all
+  ST_c[1,((i*9)-7)] <- paste0(sum(na.rm=TRUE,p_v[[i]]$case == 0),
                               ' (',
-                              round(sum(p_v[[i]]$case == 0)/nrow(p_v[[i]])*100,2),
+                              round(sum(na.rm=TRUE,p_v[[i]]$case == 0)/nrow(p_v[[i]])*100,2),
                               '%)')
-  #sex
-  ST_c[3,((i*3)-1)] <- paste0(sum(p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 0),
+  ST_c[3,((i*9)-7)] <- paste0(sum(na.rm=TRUE,p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 0),
                               ' (',
-                              round(sum(p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 0)/sum(p_v[[i]]$case == 0)*100,2),
+                              round(sum(na.rm=TRUE,p_v[[i]][p_v[[i]]$sex == 'Female',]$case == 0)/sum(na.rm=TRUE,p_v[[i]]$case == 0)*100,2),
                               '%)')
-  ST_c[4,((i*3)-1)] <- paste0(sum(p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 0),
+  ST_c[4,((i*9)-7)] <- paste0(sum(na.rm=TRUE,p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 0),
                               ' (',
-                              round(sum(p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 0)/sum(p_v[[i]]$case == 0)*100,2),
+                              round(sum(na.rm=TRUE,p_v[[i]][p_v[[i]]$sex == 'Male',]$case == 0)/sum(na.rm=TRUE,p_v[[i]]$case == 0)*100,2),
                               '%)')
-  #age at recruitment
-  ST_c[6,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$recruitment_age[p_v[[i]]$case == 0]),2),
+  ST_c[6,((i*9)-7)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$recruitment_age[p_v[[i]]$case == 0]),2),
                               ' (+/- ',
-                              round(sd(p_v[[i]]$recruitment_age[p_v[[i]]$case == 0]),2),
+                              round(sd(na.rm=TRUE,p_v[[i]]$recruitment_age[p_v[[i]]$case == 0]),2),
                               ')')
-  #age at first symptom
-  ST_c[8,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$sym_age[p_v[[i]]$case == 0]),2),
+  ST_c[8,((i*9)-7)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$sym_age[p_v[[i]]$case == 0]),2),
                               ' (+/- ',
-                              round(sd(p_v[[i]]$sym_age[p_v[[i]]$case == 0]),2),
+                              round(sd(na.rm=TRUE,p_v[[i]]$sym_age[p_v[[i]]$case == 0]),2),
                               ')')
-  
-  #bmi
-  ST_c[10,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$BMI[p_v[[i]]$case == 0], na.rm = T),2),
+  ST_c[10,((i*9)-7)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$BMI[p_v[[i]]$case == 0]),2),
                                ' (+/- ',
-                               round(sd(p_v[[i]]$BMI[p_v[[i]]$case == 0], na.rm = T),2),
+                               round(sd(na.rm=TRUE,p_v[[i]]$BMI[p_v[[i]]$case == 0]),2),
                                ')')
-  
-  #waist circumference
-  ST_c[12,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$waist_circumference[p_v[[i]]$case == 0], na.rm = T),2),
+  ST_c[12,((i*9)-7)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$waist_circumference[p_v[[i]]$case == 0]),2),
                                ' (+/- ',
-                               round(sd(p_v[[i]]$waist_circumference[p_v[[i]]$case == 0], na.rm = T),2),
+                               round(sd(na.rm=TRUE,p_v[[i]]$waist_circumference[p_v[[i]]$case == 0]),2),
                                ')')
-  #townsend deprivation index
-  ST_c[14,((i*3)-1)] <- paste0(round(mean(p_v[[i]]$TDI[p_v[[i]]$case == 0], na.rm = T),2),
+  ST_c[14,((i*9)-7)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$TDI[p_v[[i]]$case == 0]),2),
                                ' (+/- ',
-                               round(sd(p_v[[i]]$TDI[p_v[[i]]$case == 0], na.rm = T),2),
+                               round(sd(na.rm=TRUE,p_v[[i]]$TDI[p_v[[i]]$case == 0]),2),
                                ')')
-  #total
-  #N
-  ST_c[1,(i*3)] <- paste0(nrow(p_v[[i]]),' (100%)')
-  #sex
-  ST_c[3,(i*3)] <- paste0(nrow(p_v[[i]][p_v[[i]]$sex == 'Female',]),
+ #total - all
+  ST_c[1,((i*9)-6)] <- paste0(nrow(p_v[[i]]),' (100%)')
+  ST_c[3,((i*9)-6)] <- paste0(nrow(p_v[[i]][p_v[[i]]$sex == 'Female',]),
+                               ' (',
+                               round(nrow(p_v[[i]][p_v[[i]]$sex == 'Female',])/nrow(p_v[[i]])*100,2),
+                               '%)')
+  ST_c[4,((i*9)-6)] <- paste0(nrow(p_v[[i]][p_v[[i]]$sex == 'Male',]),
+                               ' (',
+                               round(nrow(p_v[[i]][p_v[[i]]$sex == 'Male',])/nrow(p_v[[i]])*100,2),
+                               '%)')
+  ST_c[6,((i*9)-6)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$recruitment_age),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v[[i]]$recruitment_age),2),
+                              ')')
+  ST_c[8,((i*9)-6)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$sym_age),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v[[i]]$sym_age),2),
+                              ')')
+  ST_c[10,((i*9)-6)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$BMI),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v[[i]]$BMI),2),
+                              ')')
+  ST_c[12,((i*9)-6)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$waist_circumference),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v[[i]]$waist_circumference),2),
+                              ')')
+  ST_c[14,((i*9)-6)] <- paste0(round(mean(na.rm=TRUE,p_v[[i]]$TDI),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v[[i]]$TDI),2),
+                              ')')
+  #cases - training
+  ST_c[1,((i*9)-5)] <- paste0(sum(na.rm=TRUE,p_v_train[[i]]$case == 1),
                               ' (',
-                              round(nrow(p_v[[i]][p_v[[i]]$sex == 'Female',])/nrow(p_v[[i]])*100,2),
+                              round(sum(na.rm=TRUE,p_v_train[[i]]$case == 1)/nrow(p_v_train[[i]])*100,2),
                               '%)')
-  ST_c[4,(i*3)] <- paste0(nrow(p_v[[i]][p_v[[i]]$sex == 'Male',]),
-                          ' (',
-                          round(nrow(p_v[[i]][p_v[[i]]$sex == 'Male',])/nrow(p_v[[i]])*100,2),
-                          '%)')
-  #age at recruitment
-  ST_c[6,(i*3)] <- paste0(round(mean(p_v[[i]]$recruitment_age),2),
+  ST_c[3,((i*9)-5)] <- paste0(sum(na.rm=TRUE,p_v_train[[i]][p_v_train[[i]]$sex == 'Female',]$case == 1),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_train[[i]][p_v_train[[i]]$sex == 'Female',]$case == 1)/sum(na.rm=TRUE,p_v_train[[i]]$case == 1)*100,2),
+                              '%)')
+  ST_c[4,((i*9)-5)] <- paste0(sum(na.rm=TRUE,p_v_train[[i]][p_v_train[[i]]$sex == 'Male',]$case == 1),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_train[[i]][p_v_train[[i]]$sex == 'Male',]$case == 1)/sum(na.rm=TRUE,p_v_train[[i]]$case == 1)*100,2),
+                              '%)')
+  ST_c[6,((i*9)-5)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$recruitment_age[p_v_train[[i]]$case == 1]),2),
                               ' (+/- ',
-                              round(sd(p_v[[i]]$recruitment_age),2),
+                              round(sd(na.rm=TRUE,p_v_train[[i]]$recruitment_age[p_v_train[[i]]$case == 1]),2),
                               ')')
-  #age at first symptom
-  ST_c[8,(i*3)] <- paste0(round(mean(p_v[[i]]$sym_age),2),
+  ST_c[8,((i*9)-5)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$sym_age[p_v_train[[i]]$case == 1]),2),
                               ' (+/- ',
-                              round(sd(p_v[[i]]$sym_age),2),
+                              round(sd(na.rm=TRUE,p_v_train[[i]]$sym_age[p_v_train[[i]]$case == 1]),2),
                               ')')
-  
-  #bmi
-  ST_c[10,(i*3)] <- paste0(round(mean(p_v[[i]]$BMI, na.rm = T),2),
+  ST_c[10,((i*9)-5)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$BMI[p_v_train[[i]]$case == 1]),2),
                                ' (+/- ',
-                               round(sd(p_v[[i]]$BMI, na.rm = T),2),
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$BMI[p_v_train[[i]]$case == 1]),2),
                                ')')
-  
-  #waist circumference
-  ST_c[12,(i*3)] <- paste0(round(mean(p_v[[i]]$waist_circumference, na.rm = T),2),
+  ST_c[12,((i*9)-5)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$waist_circumference[p_v_train[[i]]$case == 1]),2),
                                ' (+/- ',
-                               round(sd(p_v[[i]]$waist_circumference, na.rm = T),2),
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$waist_circumference[p_v_train[[i]]$case == 1]),2),
                                ')')
-  #townsend deprivation index
-  ST_c[14,(i*3)] <- paste0(round(mean(p_v[[i]]$TDI, na.rm = T),2),
+  ST_c[14,((i*9)-5)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$TDI[p_v_train[[i]]$case == 1]),2),
                                ' (+/- ',
-                               round(sd(p_v[[i]]$TDI, na.rm = T),2),
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$TDI[p_v_train[[i]]$case == 1]),2),
+                               ')')
+  #controls - training
+  ST_c[1,((i*9)-4)] <- paste0(sum(na.rm=TRUE,p_v_train[[i]]$case == 0),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_train[[i]]$case == 0)/nrow(p_v_train[[i]])*100,2),
+                              '%)')
+  ST_c[3,((i*9)-4)] <- paste0(sum(na.rm=TRUE,p_v_train[[i]][p_v_train[[i]]$sex == 'Female',]$case == 0),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_train[[i]][p_v_train[[i]]$sex == 'Female',]$case == 0)/sum(na.rm=TRUE,p_v_train[[i]]$case == 0)*100,2),
+                              '%)')
+  ST_c[4,((i*9)-4)] <- paste0(sum(na.rm=TRUE,p_v_train[[i]][p_v_train[[i]]$sex == 'Male',]$case == 0),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_train[[i]][p_v_train[[i]]$sex == 'Male',]$case == 0)/sum(na.rm=TRUE,p_v_train[[i]]$case == 0)*100,2),
+                              '%)')
+  ST_c[6,((i*9)-4)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$recruitment_age[p_v_train[[i]]$case == 0]),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_train[[i]]$recruitment_age[p_v_train[[i]]$case == 0]),2),
+                              ')')
+  ST_c[8,((i*9)-4)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$sym_age[p_v_train[[i]]$case == 0]),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_train[[i]]$sym_age[p_v_train[[i]]$case == 0]),2),
+                              ')')
+  ST_c[10,((i*9)-4)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$BMI[p_v_train[[i]]$case == 0]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$BMI[p_v_train[[i]]$case == 0]),2),
+                               ')')
+  ST_c[12,((i*9)-4)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$waist_circumference[p_v_train[[i]]$case == 0]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$waist_circumference[p_v_train[[i]]$case == 0]),2),
+                               ')')
+  ST_c[14,((i*9)-4)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$TDI[p_v_train[[i]]$case == 0]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$TDI[p_v_train[[i]]$case == 0]),2),
+                               ')')
+  #total - training
+  ST_c[1,((i*9)-3)] <- paste0(nrow(p_v_train[[i]]),' (100%)')
+  ST_c[3,((i*9)-3)] <- paste0(nrow(p_v_train[[i]][p_v_train[[i]]$sex == 'Female',]),
+                              ' (',
+                              round(nrow(p_v_train[[i]][p_v_train[[i]]$sex == 'Female',])/nrow(p_v_train[[i]])*100,2),
+                              '%)')
+  ST_c[4,((i*9)-3)] <- paste0(nrow(p_v_train[[i]][p_v_train[[i]]$sex == 'Male',]),
+                              ' (',
+                              round(nrow(p_v_train[[i]][p_v_train[[i]]$sex == 'Male',])/nrow(p_v_train[[i]])*100,2),
+                              '%)')
+  ST_c[6,((i*9)-3)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$recruitment_age),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_train[[i]]$recruitment_age),2),
+                              ')')
+  ST_c[8,((i*9)-3)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$sym_age),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_train[[i]]$sym_age),2),
+                              ')')
+  ST_c[10,((i*9)-3)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$BMI),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$BMI),2),
+                               ')')
+  ST_c[12,((i*9)-3)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$waist_circumference),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$waist_circumference),2),
+                               ')')
+  ST_c[14,((i*9)-3)] <- paste0(round(mean(na.rm=TRUE,p_v_train[[i]]$TDI),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_train[[i]]$TDI),2),
+                               ')')
+  #cases - testing
+  ST_c[1,((i*9)-2)] <- paste0(sum(na.rm=TRUE,p_v_test[[i]]$case == 1),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_test[[i]]$case == 1)/nrow(p_v_test[[i]])*100,2),
+                              '%)')
+  ST_c[3,((i*9)-2)] <- paste0(sum(na.rm=TRUE,p_v_test[[i]][p_v_test[[i]]$sex == 'Female',]$case == 1),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_test[[i]][p_v_test[[i]]$sex == 'Female',]$case == 1)/sum(na.rm=TRUE,p_v_test[[i]]$case == 1)*100,2),
+                              '%)')
+  ST_c[4,((i*9)-2)] <- paste0(sum(na.rm=TRUE,p_v_test[[i]][p_v_test[[i]]$sex == 'Male',]$case == 1),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_test[[i]][p_v_test[[i]]$sex == 'Male',]$case == 1)/sum(na.rm=TRUE,p_v_test[[i]]$case == 1)*100,2),
+                              '%)')
+  ST_c[6,((i*9)-2)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$recruitment_age[p_v_test[[i]]$case == 1]),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_test[[i]]$recruitment_age[p_v_test[[i]]$case == 1]),2),
+                              ')')
+  ST_c[8,((i*9)-2)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$sym_age[p_v_test[[i]]$case == 1]),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_test[[i]]$sym_age[p_v_test[[i]]$case == 1]),2),
+                              ')')
+  ST_c[10,((i*9)-2)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$BMI[p_v_test[[i]]$case == 1]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$BMI[p_v_test[[i]]$case == 1]),2),
+                               ')')
+  ST_c[12,((i*9)-2)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$waist_circumference[p_v_test[[i]]$case == 1]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$waist_circumference[p_v_test[[i]]$case == 1]),2),
+                               ')')
+  ST_c[14,((i*9)-2)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$TDI[p_v_test[[i]]$case == 1]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$TDI[p_v_test[[i]]$case == 1]),2),
+                               ')')
+  #controls - testing
+  ST_c[1,((i*9)-1)] <- paste0(sum(na.rm=TRUE,p_v_test[[i]]$case == 0),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_test[[i]]$case == 0)/nrow(p_v_test[[i]])*100,2),
+                              '%)')
+  ST_c[3,((i*9)-1)] <- paste0(sum(na.rm=TRUE,p_v_test[[i]][p_v_test[[i]]$sex == 'Female',]$case == 0),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_test[[i]][p_v_test[[i]]$sex == 'Female',]$case == 0)/sum(na.rm=TRUE,p_v_test[[i]]$case == 0)*100,2),
+                              '%)')
+  ST_c[4,((i*9)-1)] <- paste0(sum(na.rm=TRUE,p_v_test[[i]][p_v_test[[i]]$sex == 'Male',]$case == 0),
+                              ' (',
+                              round(sum(na.rm=TRUE,p_v_test[[i]][p_v_test[[i]]$sex == 'Male',]$case == 0)/sum(na.rm=TRUE,p_v_test[[i]]$case == 0)*100,2),
+                              '%)')
+  ST_c[6,((i*9)-1)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$recruitment_age[p_v_test[[i]]$case == 0]),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_test[[i]]$recruitment_age[p_v_test[[i]]$case == 0]),2),
+                              ')')
+  ST_c[8,((i*9)-1)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$sym_age[p_v_test[[i]]$case == 0]),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_test[[i]]$sym_age[p_v_test[[i]]$case == 0]),2),
+                              ')')
+  ST_c[10,((i*9)-1)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$BMI[p_v_test[[i]]$case == 0]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$BMI[p_v_test[[i]]$case == 0]),2),
+                               ')')
+  ST_c[12,((i*9)-1)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$waist_circumference[p_v_test[[i]]$case == 0]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$waist_circumference[p_v_test[[i]]$case == 0]),2),
+                               ')')
+  ST_c[14,((i*9)-1)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$TDI[p_v_test[[i]]$case == 0]),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$TDI[p_v_test[[i]]$case == 0]),2),
+                               ')')
+  #total - testing
+  ST_c[1,(i*9)] <- paste0(nrow(p_v_test[[i]]),' (100%)')
+  ST_c[3,(i*9)] <- paste0(nrow(p_v_test[[i]][p_v_test[[i]]$sex == 'Female',]),
+                              ' (',
+                              round(nrow(p_v_test[[i]][p_v_test[[i]]$sex == 'Female',])/nrow(p_v_test[[i]])*100,2),
+                              '%)')
+  ST_c[4,(i*9)] <- paste0(nrow(p_v_test[[i]][p_v_test[[i]]$sex == 'Male',]),
+                              ' (',
+                              round(nrow(p_v_test[[i]][p_v_test[[i]]$sex == 'Male',])/nrow(p_v_test[[i]])*100,2),
+                              '%)')
+  ST_c[6,(i*9)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$recruitment_age),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_test[[i]]$recruitment_age),2),
+                              ')')
+  ST_c[8,(i*9)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$sym_age),2),
+                              ' (+/- ',
+                              round(sd(na.rm=TRUE,p_v_test[[i]]$sym_age),2),
+                              ')')
+  ST_c[10,(i*9)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$BMI),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$BMI),2),
+                               ')')
+  ST_c[12,(i*9)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$waist_circumference),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$waist_circumference),2),
+                               ')')
+  ST_c[14,(i*9)] <- paste0(round(mean(na.rm=TRUE,p_v_test[[i]]$TDI),2),
+                               ' (+/- ',
+                               round(sd(na.rm=TRUE,p_v_test[[i]]$TDI),2),
                                ')')
 }
 
-rownames(ST_c) <- c('N (% of cohort)', 'Sex (patient self-reported)',
-                    'Female (% of cases/controls/total)',
+
+
+STc_titles <- matrix(rep('', times=(2*15*3*3)), ncol=15*3*3, byrow=TRUE)
+cohorts <- c('Full cohort','40-49','50-59','60-69','70-79',
+             'Female','Male',
+             'F 40-49','M 40-49',
+             'F 50-59','M 50-59',
+             'F 60-69','M 60-69',
+             'F 70-79','M 70-79')
+for (i in 1:15) {
+  STc_titles[1,((i*9)-8)] <- paste0(cohorts[i],' - all participants')
+  STc_titles[1,((i*9)-5)] <- paste0(cohorts[i],' - training dataset')
+  STc_titles[1,((i*9)-2)] <- paste0(cohorts[i],' - testing dataset')
+}
+STc_titles[2,] <- rep(c('Cases','Controls','Total'),times=45)
+
+ST_c_2 <- rbind(STc_titles, ST_c)
+rownames(ST_c_2) <- c('blank1','blank2',
+                      'N (% of cohort)',
+                    'Sex (patient self-reported)','Female (% of cases/controls/total)',
                     'Male (% of cases/controls/total)',
                     'Age at UKBB baseline/recruitment (years)',
-                    'Mean (+/- SD) 1',
+                    'Mean (+/- SD)',
                     'Age at first CRC symptom (years)',
-                    'Mean (+/- SD) 2',
+                    'Mean (+/- SD) 1',
                     'Body mass index (BMI) (kg/m^2)',
-                    'Mean (+/- SD) 3',
+                    'Mean (+/- SD) 2',
                     'Waist circumference (cm)',
-                    'Mean (+/- SD) 4',
+                    'Mean (+/- SD) 3',
                     'Townsend deprivation index (TDI)',
-                    'Mean (+/- SD) 5')
+                    'Mean (+/- SD) 4'
+)
 
-colnames(ST_c) <- rep(names(p_v),each=3)
-
-write.csv(ST_c, "ST_2.csv", row.names=T)
+write.csv(ST_c_2, "ST_c_2.csv", row.names=T)
