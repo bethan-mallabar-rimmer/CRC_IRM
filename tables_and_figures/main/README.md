@@ -1,4 +1,4 @@
-This folder contains code used to generate **Figures 2 and 3** in the main body of the paper (**Figure 1** was made in PowerPoint not R). It does not contain code used to generate Tables 1-3 because these were adapted from Supplementary Tables:
+This folder contains code used to generate **Figures 2 and 3** (**Figure 1** was made in PowerPoint not R) and **Table 4** in the main body of the paper. It does not contain code used to generate Tables 1-3 because these were adapted from Supplementary Tables:
 
 **Table 1**</p>
 Data in Table 1 is from <a href='https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/tables_and_figures/supplementary/sup_table_2'>Supplementary Table 2</a> columns 1-3.</p>
