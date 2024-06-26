@@ -1,5 +1,5 @@
 #required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
-#p_40_v and p_00_v from Section 4
+#p_40_v and p_00_v from Section [insert]
 
 #install.packages('patchwork')
 library(dplyr)
@@ -8,21 +8,41 @@ library(patchwork)
 library(devtools)
 
 #A
+#combine density and histogram plots
+#B
+#redo case-control density figure for no age threshold
+#C
+#case control density figure age threshold 40
+
+#A
 #===
 #install some required packages with devtools:
 source_url("https://raw.githubusercontent.com/hdg204/UKBB/main/UKBB_Health_Records_Public.R")
-source_url("https://raw.githubusercontent.com/bethan-mallabar-rimmer/CRC_IRM/main/find_read_codes/find_read_codes.R") 
+source_url("https://raw.githubusercontent.com/ID690016874/HPDM042/main/find-read-codes/find_read_codes.R") 
 
 #get read 2/3 codes and descriptions for CRC
 lkp2 <- read.csv('read2_lkp.csv') # download read 2 lookup table
 lkp3 <- read.csv('read3_lkp.csv') # download read 3 lookup table
+
+#get read 2/3 codes and descriptions for CRC
 crc_codes_gp <- find_read_codes(c('B13','B14','B575','B1z','B803','B804','B902','BB5N'))
-crc_codes_gp_filtered <- crc_codes_gp[! crc_codes_gp$code %in% c('B1z..','B1z0.','B1zy.','B1zz.','B902.','B9020','B902z'),]
+#exclude irrelevant codes (e.g. non cancer, or cancer of anus/anal canal or appendix)
+crc_codes_gp_filtered <- crc_codes_gp[! crc_codes_gp$code %in% c('B1z..','B1z0.','B1zy.','B1zz.',
+                                                                 'B902.','B9020','B902z',
+                                                                 'B143.','BB5N2','B135.',
+                                                                 'BB5Nz','BB5N.','BB5N0',
+                                                                 'B9025','B142.','XaZfN',
+                                                                 'XaFsw'),]
+#list ICD10 cancer registry codes for CRC
+#excluding cancers of appendix (C18.1) and anus/anal canal (C21)
+crc_codes_icd10_filtered <- c('C18.0','C18.2','C18.3','C18.4',
+                              'C18.5','C18.6','C18.7','C18.8',
+                              'C18.9','C19','C20')
 
 #get all hospital episode statistic, GP, and cancer registry records for CRC
-hes_records <- read_ICD10(c('C18','C19','C20','C21'))
+hes_records <- read_ICD10(crc_codes_icd10_filtered)
 gp_records <- read_GP(crc_codes_gp_filtered$code)
-cr_records <- read_cancer(c('C18','C19','C20','C21'))
+cr_records <- read_cancer(crc_codes_icd10_filtered)
 
 #get all death records for CRC
 death <- read.csv('death_death.csv') #date of death - only columns used for analysis were participant ID and date of death formatted: year-month-day
@@ -35,7 +55,7 @@ for (i in 1:nrow(death_cause)) {death_cause$code[i] <- substr(death_cause$code[i
 #add date of death
 death_cause <- left_join(death_cause,death[,c(2,6)]) #col 2 = ID, 6 = date of death
 #filter to colorectal cancer only:
-death_cause <- death_cause[death_cause$code %in% c('C18','C19','C20','C21'),]
+death_cause <- death_cause[death_cause$code %in% c('C18','C19','C20'),]
 
 #import a table including participant IDs + all the lifestyle variables/chacteristics assessed in this study
 #table was generated on the DNA Nexus UKBB research analysis platform
@@ -84,14 +104,15 @@ cr_records <- cr_records[!duplicated(cr_records),]
 death_records <- filter(death_records, !(eid %in% withdraw$X1003904))
 death_records <- death_records[!duplicated(death_records),]
 
-#AAA---PLOT THE GRAPH---AAA
-#==========================
+#A - PLOT THE GRAPH
+#===================
+
 HGtheme=theme_bw()+ #a graph theme made by Harry Green @ Exeter:
   theme(axis.line = element_line(colour = "black"),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         plot.title = element_text(hjust = 0.5))
-HGtheme2=theme_bw()+
+HGtheme2=theme_bw()+ #a graph theme made by Harry Green @ Exeter:
   theme(axis.line = element_line(colour = "black"),
         panel.background = element_blank(),
         plot.title = element_text(hjust = 0.5))
@@ -218,14 +239,27 @@ sf1_a <- hr / cr / gr / dr
 #axis labels were then added manually in powerpoint because plotting axis
 #subtitles in ggplot is hard, particularly with two different axes...
 
+pdf(file="sf1_a.pdf",
+    width=6.89,
+    height=5.5)
+sf1_a
+dev.off()
+
 #B
 #===
+#upload p_00_v and p_40_v from full analysis pipeline
+
 sf1_b <- p_00_v %>% ggplot() +
   aes(x = sym_age, linetype = as.factor(case)) + HGtheme +
   geom_density(alpha = 0.4, fill='lightgrey') + scale_linetype_discrete(name="",labels=c("control","case")) +
   xlab('age at first CRC symptom') + geom_vline(xintercept = 40) + 
   scale_x_continuous(breaks=seq(0,80,by=10)) + scale_y_continuous(breaks=seq(0,0.06,by=0.01),
                                                                   limits=c(0,0.0605))
+pdf(file = "sf1_b.pdf",
+    width = 6.89,
+    height = 2.75)
+sf1_b
+dev.off()
 
 
 #C
@@ -234,5 +268,13 @@ sf1_c <- p_40_v %>% ggplot() +
   aes(x = sym_age, linetype = as.factor(case)) + HGtheme +
   geom_density(alpha = 0.4, fill='lightgrey') + scale_linetype_discrete(name="",labels=c("control","case")) +
   xlab('age at first CRC symptom') + 
-  scale_x_continuous(breaks=seq(0,80,by=10)) + scale_y_continuous(breaks=seq(0,0.06,by=0.01),
+  scale_x_continuous(breaks=seq(40,80,by=10)) + scale_y_continuous(breaks=seq(0,0.06,by=0.01),
                                                                   limits=c(0,0.0605))
+
+pdf(file = "sf1_c.pdf",
+    width = 6.89,
+    height = 2.75)
+sf1_c
+dev.off()
+
+
