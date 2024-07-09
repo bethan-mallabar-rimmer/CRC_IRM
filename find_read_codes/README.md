@@ -2,12 +2,14 @@
 Search UK Biobank clinical read 2/3 code lookup tables for codes beginning with a character or character vector input by the user. Return codes and descriptions. Not fully bug tested so please let me know of any issues.
 
 
-<h2>Requirements:</h2> <h3>Upload files read2_lkp.csv and read3_lkp.csv (available upon request from the authors) to working environment prior to running function.</h3>
+<h2>Requirements:</h2> <h3>Upload files read2_lkp.csv, orig_read2.csv, read3_lkp.csv, and orig_read3.csv to working environment prior to running function.</h3>
 <b>read2_lkp.csv:</b></p>
-Headers are read_2, term_code, term_description, orig_read_code</p>
+Headers are read_2, term_code, term_description</p>
+Downloadable from https://biobank.ndph.ox.ac.uk/showcase/refer.cgi?id=592 (primarycare_codings.zip). read2_lkp.csv = read_v2_lkp tab in the Excel table.</p>
 Some of the entries in term_description include a comma, so have been inadvertantly split between term_description and orig_read_code because this is a CSV. The function fixes this.</p>
 <b>read3_lkp.csv:</b></p>
 Headers are read_3, term_description, description_type, status, old_readcode</p>
+Downloadable from https://biobank.ndph.ox.ac.uk/showcase/refer.cgi?id=592 (primarycare_codings.zip). read3_lkp.csv = read_ctv3_lkp tab in the Excel table.</p>
 Some of the entries in term_description include a comma, so have been inadvertantly split between term_description and description_type because this is a CSV. The function fixes this.</p>
 
 <h2>Inputs:</h2> <h3>find_read_codes(codes, file1 = 'read2_lkp.csv', file2 = 'read3_lkp.csv', loop_limit = 3)</h3>
