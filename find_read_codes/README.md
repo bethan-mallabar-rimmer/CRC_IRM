@@ -5,7 +5,7 @@ Search UK Biobank clinical read 2/3 code lookup tables for codes beginning with 
 <h2>Requirements:</h2> <h3>Upload files read2_lkp.csv and read3_lkp.csv to working environment prior to running function.</h3>
 <b>read2_lkp.csv:</b></p>
 Headers are read_2, term_code, term_description, orig_read_code</p>
-Source columns except 'orig_read_code': publicly available at https://biobank.ndph.ox.ac.uk/showcase/refer.cgi?id=592 (primarycare_codings.zip, read_v2_lkp tab in the Excel table.)</p>
+Source for all columns except 'orig_read_code': publicly available at https://biobank.ndph.ox.ac.uk/showcase/refer.cgi?id=592 (primarycare_codings.zip, read_v2_lkp tab in the Excel table.)</p>
 Some of the entries in term_description include a comma, so have been inadvertantly split between term_description and orig_read_code because this is a CSV. The function fixes this.</p>
 <b>read3_lkp.csv:</b></p>
 Headers are read_3, term_description, description_type, status</p>
