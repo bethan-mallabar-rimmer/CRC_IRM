@@ -1,5 +1,5 @@
-# This repository contains files and pipeline for 'Colorectal cancer risk stratification using a polygenic risk score in symptomatic patients presenting to primary care – a UK Biobank retrospective cohort study'.
-MedRXiv link: [insert]
+# This repository contains files and pipeline for 'Colorectal cancer risk stratification using a polygenic risk score in symptomatic primary care patients – a UK Biobank retrospective cohort study'.
+Doi: [insert]
 
 **analysis.R** contains all the code used for the analysis. It mostly runs on R version 4.1.1.
 
