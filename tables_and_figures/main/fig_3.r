@@ -1,5 +1,5 @@
 #required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
-#p_v from Section 6
+#p_40_ve from Section 6
 
 #FIGURE 3
 #========
@@ -14,15 +14,15 @@ binaryci <- function(binarylist){
 }
 
 #get incidence rate for top and bottom quintile:
-top_quin_inc_40e <- binaryci(p_v$p_40_ve$case[p_v$p_40_ve$grs_quintile==5])
-bottom_quin_inc_40e <- binaryci(p_v$p_40_ve$case[p_v$p_40_ve$grs_quintile==1])
+top_quin_inc_40e <- binaryci(p_40_ve$case[p_v$p_40_ve$grs_quintile==5])
+bottom_quin_inc_40e <- binaryci(p_40_ve$case[p_v$p_40_ve$grs_quintile==1])
 
 #6C. Cox proportional hazards modelling and survival curve
 #==========================================================
-#IMPORTANT: This section needs to be run on an up-to-date version of R if possible, otherwise package dependencies etc. cause lots of errors.
+#IMPORTANT: This section needs to be run on an up-to-date version of R if possible (as of 2023/24), otherwise package dependencies etc. cause lots of errors.
 
-#Required packages (uncomment to install)
-#========================================
+#Required packages
+#==================
 #install.packages('survminer')
 #install.packages('ggpubr')
 library(ggplot2)
@@ -53,7 +53,7 @@ make_survframe <- function(p_xx_v) {
   return(survframe)
 }
 
-survframe_e <- make_survframe(p_v$p_40_ve)
+survframe_e <- make_survframe(p_40_ve)
 
 #Run Cox PH model
 #---------------
