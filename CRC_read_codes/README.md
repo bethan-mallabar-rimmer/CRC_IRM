@@ -1,7 +1,7 @@
 This folder contains the Read codes for CRC symptoms and CRC diagnosis used in the analysis.</p>
 
 **Symptoms**</p>
-200 Read codes (filtered to 151) were provided by the Diagnosis of Symptomatic Cancer Optimally (DISCO) consortium, University of Exeter. These are available upon reasonable request to either the first author (Bethan Mallabar-Rimmer) or corresponding author (Dr. Harry Green) - [link to MedRXiv]. Thanks to Dr. Sarah Price for identifying these 200 Read codes.</p>
+200 Read codes (filtered to 151) were provided by the Diagnosis of Symptomatic Cancer Optimally (DISCO) consortium, University of Exeter. These are available upon reasonable request to either the first author (Bethan Mallabar-Rimmer) or corresponding author (Dr. Harry Green) - https://doi.org/10.1038/s41431-024-01654-3 . Thanks to Dr. Sarah Price for identifying these 200 Read codes.</p>
 
 19 additional Read codes were found by by Dr. Matthew Barclay, University College London.</p>
 
