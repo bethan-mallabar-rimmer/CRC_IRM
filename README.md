@@ -1,5 +1,5 @@
 # This repository contains files and pipeline for 'Colorectal cancer risk stratification using a polygenic risk score in symptomatic primary care patients – a UK Biobank retrospective cohort study'.
-Doi: [insert]
+Doi: https://doi.org/10.1038/s41431-024-01654-3
 
 **analysis.R** contains all the code used for the analysis. It mostly runs on R version 4.1.1.
 
@@ -19,6 +19,8 @@ Contents:
   11. Results of steps 9 and 10 concurred that a 6-variable integrated risk model performed best in the training cohort. Evaluate this model in the testing cohort.</p>
 
 Abbreviations: AIC, Akaike information criterion, CRC = colorectal cancer, ROCAUC = receiver operating characteristic area under the curve</p>
+
+Please note the code to generate a polygenic risk score in this pipeline is no longer working after the rbgen package disappeared from the internet. New code for this can be found at: https://github.com/hdg204/GRS-Nexus - please contact the author of this repository with any questions.</p>
 
 The **find_read_codes** folder contains an R function which takes read codes as input and returns similar read codes.</p>
 
