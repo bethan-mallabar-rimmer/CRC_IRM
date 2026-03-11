@@ -1,0 +1,53 @@
+#required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
+#symptom_type from Section 1
+#p_v, p_v_test and p_v_train from Section 7
+
+ST_psym <- matrix(rep(NA, times=(ncol(symptom_type)-1)*15*3), ncol=15*3, byrow=TRUE)
+colnames(ST_psym) <- c("Full cohort","Training dataset (80% of full cohort)","Testing dataset (20% of full cohort)",
+                       "40-49 (all participants)","40-49 (training 80%)","40-49 (testing 20%)",
+                       "50-59 (all participants)","50-59 (training 80%)","50-59 (testing 20%)",
+                       "60-69 (all participants)","60-69 (training 80%)","60-69 (testing 20%)",
+                       "70-79 (all participants)","70-79 (training 80%)","70-79 (testing 20%)",
+                       "Female (all participants)","Female (training 80%)","Female (testing 20%)",
+                       "Male (all participants)","Male (training 80%)","Male (testing 20%)",
+                       "F 40-49 (all participants)","F 40-49 (training 80%)","F 40-49 (testing 20%)",
+                       "M 40-49 (all participants)","M 40-49 (training 80%)","M 40-49 (testing 20%)",
+                       "F 50-59 (all participants)","F 50-59 (training 80%)","F 50-59 (testing 20%)",
+                       "M 50-59 (all participants)","M 50-59 (training 80%)","M 50-59 (testing 20%)",
+                       "F 60-69 (all participants)","F 60-69 (training 80%)","F 60-69 (testing 20%)",
+                       "M 60-69 (all participants)","M 60-69 (training 80%)","M 60-69 (testing 20%)",
+                       "F 70-79 (all participants)","F 70-79 (training 80%)","F 70-79 (testing 20%)",
+                       "M 70-79 (all participants)","M 70-79 (training 80%)","M 70-79 (testing 20%)")
+rownames(ST_psym) <- c('abdo_pain','abdo_mass','change_bowel_habit',
+                       'iron_def','haemoglobin','loss_appetite','rectal_bloodloss',
+                       'weightloss','unintentional_weightloss','other_weightloss')
+
+for (i in 1:15) {
+  for (j in 1:nrow(ST_psym)) {
+    ST_psym[j,(i*3)-2] <- paste0(
+      sum(p_v[[i]][which(names(p_v[[i]]) == rownames(ST_psym)[j])] == 1),
+      ' (',
+      round(sum(p_v[[i]][which(names(p_v[[i]]) == rownames(ST_psym)[j])] == 1)/
+              nrow(p_v[[i]][which(names(p_v[[i]]) == rownames(ST_psym)[j])])*100,2),
+      '%)'
+    )
+    ST_psym[j,(i*3)-1] <- paste0(
+      sum(p_v_train[[i]][which(names(p_v_train[[i]]) == rownames(ST_psym)[j])] == 1),
+      ' (',
+      round(sum(p_v_train[[i]][which(names(p_v_train[[i]]) == rownames(ST_psym)[j])] == 1)/
+              nrow(p_v_train[[i]][which(names(p_v_train[[i]]) == rownames(ST_psym)[j])])*100,2),
+      '%)'
+    )
+    ST_psym[j,(i*3)] <- paste0(
+      sum(p_v_test[[i]][which(names(p_v_test[[i]]) == rownames(ST_psym)[j])] == 1),
+      ' (',
+      round(sum(p_v_test[[i]][which(names(p_v_test[[i]]) == rownames(ST_psym)[j])] == 1)/
+              nrow(p_v_test[[i]][which(names(p_v_test[[i]]) == rownames(ST_psym)[j])])*100,2),
+      '%)'
+    )
+    
+    
+  }
+}
+write.csv(ST_psym, "ST_psym.csv", row.names=T)
+

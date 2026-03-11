@@ -1,0 +1,30 @@
+#required variables from analysis: https://github.com/bethan-mallabar-rimmer/CRC_IRM/blob/main/analysis.R
+#p_v_train and p_v_test from Section 7, lr_v_train from Section 8
+
+#Missing variables
+#=================
+ST_mis <- matrix(rep(NA, times=length(lr_v_train$p_40_ve)*15*2), ncol=15*2, byrow=TRUE)
+rownames(ST_mis) <- names(lr_v_train$p_40_ve)
+
+for (i in 1:15) {
+  for (j in 1:nrow(ST_mis)) {
+    ST_mis[j,((i*2)-1)] <- paste0(sum(!is.na(p_v_train[[i]][,colnames(p_v_train[[i]]) == rownames(ST_mis)[j]])),
+                                  ' (',
+                                  round(sum(!is.na(p_v_train[[i]][,colnames(p_v_train[[i]]) == rownames(ST_mis)[j]])) / nrow(p_v_train[[i]])*100,2),'%)')
+    ST_mis[j,(i*2)] <- paste0(sum(!is.na(p_v_test[[i]][,colnames(p_v_test[[i]]) == rownames(ST_mis)[j]])),
+                                  ' (',
+                                  round(sum(!is.na(p_v_test[[i]][,colnames(p_v_test[[i]]) == rownames(ST_mis)[j]])) / nrow(p_v_test[[i]])*100,2),'%)')
+  }
+}
+
+cohorts <- c('Full cohort','40-49','50-59','60-69','70-79',
+             'Female','Male',
+             'F 40-49','M 40-49',
+             'F 50-59','M 50-59',
+             'F 60-69','M 60-69',
+             'F 70-79','M 70-79')
+cohorts2 <- rep(cohorts,each=2)
+cohorts2 <- paste0(cohorts2, c(" - training dataset", " - testing dataset"))
+colnames(ST_mis) <- cohorts2
+
+write.csv(ST_mis, "ST_missing_4.csv", row.names=T)

@@ -1,0 +1,77 @@
+"","Read code","Read 2 term description","Read 3 term description","source","weightloss","weightloss (specified unintentional)","weightloss (unspecified)","loss of appetite","iron deficiency","abdominal mass","abdominal pain","rectal bleeding","change in bowel habit","haemoglobin level"
+"1","1965.","Biliary colic -1965; Biliary colic symptom -1965","Biliary colic; Biliary colic symptom","BMR",0,0,0,0,0,0,1,0,0,0
+"2","1967.","Abdominal migraine - symptom -1967","Abdominal migraine - symptom","BMR",0,0,0,0,0,0,1,0,0,0
+"3","1974.","Right subcostal pain -1974","Right subcostal pain","BMR",0,0,0,0,0,0,1,0,0,0
+"4","25D5.","O/E - guarding - R.lumbar","O/E - guarding - R.lumbar","BMR",0,0,0,0,0,0,1,0,0,0
+"5","25D7.","O/E - guarding - L.lumbar","O/E - guarding - L.lumbar","BMR",0,0,0,0,0,0,1,0,0,0
+"6","25E2.","O/E - rebound-R.hypochondrium","O/E - rebound-R.hypochondrium","BMR",0,0,0,0,0,0,1,0,0,0
+"7","25E3.","O/E - rebound - epigastrium","O/E - rebound - epigastrium","BMR",0,0,0,0,0,0,1,0,0,0
+"8","25E4.","O/E - rebound-L.hypochondrium","O/E - rebound-L.hypochondrium","BMR",0,0,0,0,0,0,1,0,0,0
+"9","25E5.","O/E - rebound - R.lumbar","O/E - rebound - R.lumbar","BMR",0,0,0,0,0,0,1,0,0,0
+"10","25E6.","O/E - rebound - umbilical","O/E - rebound - umbilical","BMR",0,0,0,0,0,0,1,0,0,0
+"11","25E7.","O/E - rebound - L.lumbar","O/E - rebound - L.lumbar","BMR",0,0,0,0,0,0,1,0,0,0
+"12","25E8.","O/E - rebound - R.iliac","O/E - rebound - R.iliac","BMR",0,0,0,0,0,0,1,0,0,0
+"13","25E9.","O/E - rebound - hypogastrium","O/E - rebound - hypogastrium","BMR",0,0,0,0,0,0,1,0,0,0
+"14","25EA.","O/E - rebound - L.iliac","O/E - rebound - L.iliac","BMR",0,0,0,0,0,0,1,0,0,0
+"15","25F2.","O/E - board like abd. rigidity; O/E - acute abdomen","O/E abdomen: [board like rigidity] or [acute]; O/E - board like abd. rigidity; O/E - acute abdomen","BMR",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"16","25FZ.","O/E - abdominal rigidity NOS","O/E - abdominal rigidity NOS","BMR",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"17","25J1.","O/E - abd. mass not palpated","O/E - abd. mass not palpated","BMR",0,0,0,0,0,1,0,0,0,0
+"18","25J2.","O/E - abd. mass < 1 quadrant","O/E - abd. mass < 1 quadrant","BMR",0,0,0,0,0,1,0,0,0,0
+"19","25J4.","O/E - abd. mass fills half abd","O/E - abd. mass fills half abd","BMR",0,0,0,0,0,1,0,0,0,0
+"20","25J6.","Appendix mass","See X304O","BMR",0,0,0,0,0,1,0,0,0,0
+"21","25JA.","Loaded colon","See XaI94","BMR",0,0,0,0,0,0,0,0,1,0
+"22","25JZ.","O/E - abd. mass palpated NOS","O/E - abd. mass palpated NOS","BMR",0,0,0,0,0,1,0,0,0,0
+"23","25K4.","O/E - abdominal mass-pulsatile","O/E - abdominal mass-pulsatile","BMR",0,0,0,0,0,1,0,0,0,0
+"24","25L1.","O/E - abd. mass -regular shape","O/E - abd. mass -regular shape","BMR",0,0,0,0,0,1,0,0,0,0
+"25","25LZ.","O/E - abd. mass shape NOS","O/E - abd. mass shape NOS","BMR",0,0,0,0,0,1,0,0,0,0
+"26","J68z0","Gastric haemorrhage NOS","Gastric haemorrhage NOS","BMR",0,0,0,0,0,0,0,1,0,0
+"27","J68z2","Upper gastrointestinal haemorrhage","See X30Be","BMR",0,0,0,0,0,0,0,1,0,0
+"28","R090D","[D]Abdominal migraine","[D]Abdominal migraine","BMR",0,0,0,0,0,0,1,0,0,0
+"29","R0933","[D]Pelvic swelling","[D]Pelvic swelling","BMR",0,0,0,0,0,1,0,0,0,0
+"30","R0934","[D]Pelvic mass","[D]Pelvic mass","BMR",0,0,0,0,0,1,0,0,0,0
+"31","R0935","[D]Pelvic lump","[D]Pelvic lump","BMR",0,0,0,0,0,1,0,0,0,0
+"32","Ua1iv",NA,"Decrease in appetite; Poor appetite; Reduced appetite","BMR",0,0,0,1,0,0,0,0,0,0
+"33","X304O",NA,"Appendix mass","BMR",0,0,0,0,0,1,0,0,0,0
+"34","X30Be",NA,"Upper gastrointestinal haemorrhage; Upper GI - gastrointestinal haemorrhage","BMR",0,0,0,0,0,0,0,1,0,0
+"35","Xa7xW",NA,"Tenderness of epigastrium","BMR",0,0,0,0,0,0,1,0,0,0
+"36","Xa83s",NA,"Right upper quadrant pain","BMR",0,0,0,0,0,0,1,0,0,0
+"37","XaBDO",NA,"[D] Right upper quadrant pain","BMR",0,0,0,0,0,0,1,0,0,0
+"38","XaBDQ",NA,"[D] Left upper quadrant pain","BMR",0,0,0,0,0,0,1,0,0,0
+"39","XaBDR",NA,"[D] Upper abdominal pain","BMR",0,0,0,0,0,0,1,0,0,0
+"40","XaBLm",NA,"Haemoglobin A1 level","BMR",0,0,0,0,0,0,0,0,0,1
+"41","XaBj4",NA,"Epigastric mass","BMR",0,0,0,0,0,1,0,0,0,0
+"42","XaD2x",NA,"[D]Left lower quadrant pain","BMR",0,0,0,0,0,0,1,0,0,0
+"43","XaD2y",NA,"[D]Right lower quadrant pain","BMR",0,0,0,0,0,0,1,0,0,0
+"44","XaD2z",NA,"[D]Nonspecific abdominal pain","BMR",0,0,0,0,0,0,1,0,0,0
+"45","XaDsr",NA,"O/E left lower abdominal mass","BMR",0,0,0,0,0,1,0,0,0,0
+"46","XaFt2",NA,"Blood on toilet paper","BMR",0,0,0,0,0,0,0,1,0,0
+"47","XaI94",NA,"Loaded colon","BMR",0,0,0,0,0,0,0,0,1,0
+"48","XaIMX",NA,"Blood on pants","BMR",0,0,0,0,0,0,0,1,0,0
+"49","XaIu3",NA,"Abnormally thin","BMR",1,1,0,0,0,0,0,0,0,0
+"50","XaIxC",NA,"Weight loss from baseline weight","BMR",1,0,1,0,0,0,0,0,0,0
+"51","XaJM4",NA,"[D]Underweight","BMR",1,1,0,0,0,0,0,0,0,0
+"52","XaJuu",NA,"Painful rectal bleeding","BMR",0,0,0,0,0,0,0,1,0,0
+"53","XaJuv",NA,"Painless rectal bleeding","BMR",0,0,0,0,0,0,0,1,0,0
+"54","XaKwR",NA,"Complaining of weight loss","BMR",1,1,0,0,0,0,0,0,0,0
+"55","XaXTs",NA,"Unintentional weight loss","BMR",1,1,0,0,0,0,0,0,0,0
+"56","XaY2H",NA,"Functional abdominal pain syndrome","BMR",0,0,0,0,0,0,1,0,0,0
+"57","XaYVt",NA,"Referral to rectal bleeding clinic","BMR",0,0,0,0,0,0,0,1,0,0
+"58",".196B",NA,"See XaJuu","MB",0,0,0,0,0,0,0,1,0,0
+"59",".196C",NA,"See XaJuv","MB",0,0,0,0,0,0,0,1,0,0
+"60",".19E6",NA,"See 19E6.","MB",0,0,0,0,0,0,0,1,0,0
+"61",".19ED",NA,"See XaFt2","MB",0,0,0,0,0,0,0,1,0,0
+"62",".19EG",NA,"See XaIMX","MB",0,0,0,0,0,0,0,1,0,0
+"63",".4762",NA,"See 4762.","MB",0,0,0,0,0,0,0,1,0,0
+"64",".4793",NA,"See 4793.","MB",0,0,0,0,0,0,0,1,0,0
+"65",".4794",NA,"See 4794.","MB",0,0,0,0,0,0,0,1,0,0
+"66",".I78.",NA,"See J68..","MB",0,0,0,0,0,0,0,1,0,0
+"67",".I782",NA,"See XE0bI","MB",0,0,0,0,0,0,0,1,0,0
+"68",".I78Z",NA,"See J68zz","MB",0,0,0,0,0,0,0,1,0,0
+"69","X30Bj",NA,"Bleeding per rectum; PR - Bleeding per rectum; Blood per rectum; PR - Blood per rectum","MB",0,0,0,0,0,0,0,1,0,0
+"70","X76fI",NA,"Blood in faeces symptom","MB",0,0,0,0,0,0,0,1,0,0
+"71","XE0b0",NA,"Haemorrhage of rectum and anus","MB",0,0,0,0,0,0,0,1,0,0
+"72","XE0bI",NA,"Melaena; Altered blood passed per rectum; Altered blood in stool; Black - tarry stool","MB",0,0,0,0,0,0,0,1,0,0
+"73","XE0bJ",NA,"Gastrointestinal haemorrhage unspecified","MB",0,0,0,0,0,0,0,1,0,0
+"74","XE0rJ",NA,"Blood in stool; Blood in faeces; Faeces: blood; Haematochezia","MB",0,0,0,0,0,0,0,1,0,0
+"75","XE26B",NA,"Faeces: fresh blood present","MB",0,0,0,0,0,0,0,1,0,0
+"76","XM1VX",NA,"See XE0rJ","MB",0,0,0,0,0,0,0,1,0,0
